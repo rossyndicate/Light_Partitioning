@@ -1,0 +1,130 @@
+---
+title: "Light partitioning "
+author:
+- "Dr. Matthew Ross"
+- 'Dr. Jim Jawitz'
+- 'Dr. Matt Cohen'
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+site: bookdown::bookdown_site
+documentclass: book
+output:
+  bookdown::gitbook: default
+  #bookdown::pdf_book: default
+editor_options: 
+  chunk_output_type: console
+---
+
+
+# (PART) Motivation {-}
+
+# Tiny intro
+
+Water clarity and its components (chlorophyll a, total suspended sediment, and dissolved organic carbon) are among the most functionally important and socially-relevant aspects of water quality. Here we
+propose a method for systematically evaluating the relative contribution
+of each water clarity component to total clarity. We further borrow a 
+visualization tool from soil analyses, the ternary diagram. We build 
+ternary diagrams that partition light partitioning between DOC, algal cells, and non-algal particles. 
+
+
+## Workflow
+
+
+In its simplest form our workflow is:
+
+1. Download all of [AquaSat](https://figshare.com/collections/AquaSat/4506140) and join disparate AquaSat pieces together
+
+2. Investigate data quality of AquaSat and select a subset of data
+where chl-a, doc, tss, and secchi were all measured simultaneously
+
+3. Investigate the relationship between chl-a, tis (inorganic sediment),
+non-algal particles (dead particles), and algae biomass to build a
+dataset of algal biomass, non-algal particle mass, and dissolved organic carbon mass. 
+
+4. Build a model that predicts light extinction (1.4/secchi)
+using algal particles, non-algal particles, and doc.
+
+5. Use this model to extract light extinction coefficients for 
+each parameter, apply this model to visualizations in ternary space
+
+6. Explore systematic controls on relative contribution to light
+extinction over space and time across CONUS. 
+
+# (PART) Data downloads and decisions {-}
+
+# Download
+
+
+I recognize that I should probably just use `targets` for this part, but...
+I (Matt Ross) don't know how to use targets yet! So, instead we are just
+going to have a code chunk here that just downloads all the data directly
+from figshare, and the chunk will just be set to `eval = FALSE`, so it won't
+run unless you manually run it. That way this book can run in reasonable timeframes,
+most other chunks will run based on "cacheing." Though, some data intensive tasks,
+will also simply have `eval = F` to save runtime. These chunks will be flagged
+explicitly, and all their data products saved to a `data/out` folder. 
+
+## AquaSat download
+
+AquaSat is held in a figshare collection with many pieces. For this work we
+will need most of the data held there, which we will access through direct download.
+The URLs are just from the AquaSat collection links.
+
+```{r, eval = F}
+## AquaSat Download data. This takes > 2 hours,
+## so only run if you think 
+## AquaSat has been updated!
+
+## Also
+
+## In-situ raw data with methods
+download.file('https://figshare.com/ndownloader/files/15475154',
+              mode = 'wb',# Needs to be written in binary for some reason 
+              destfile = 'data/in/aq_situ.zip')
+unzip('data/in/aq_situ.zip',exdir = 'data/in/aq_situ')
+
+
+# Site Inventory with type, because it's not in the other inventory
+# Stupid aquasat developer (me/mattross!)
+download.file('https://figshare.com/ndownloader/files/24720434',
+              mode = 'wb',
+              destfile = 'data/in/inv.feather')
+
+
+## Unique site inventory 
+
+download.file('https://figshare.com/ndownloader/files/24720437',
+              mode = 'wb',
+              destfile = 'data/in/unq_site.feather')
+
+## Ecoregion data
+download.file('https://gaftp.epa.gov/EPADataCommons/ORD/Ecoregions/cec_na/na_cec_eco_l2.zip', destfile = 'data/in/eco2.zip')
+
+unzip('data/in/eco2.zip',exdir = 'data/in/ecoregion')
+
+
+```
+
+## AquaSat Read
+
+```{r}
+inv_type <- read_feather('C:/Users/mrvr/Dropbox/UNC-PostDocAll/aquasat/1_wqdata/out/wqp_inventory.feather') %>%
+    select(SiteID = MonitoringLocationIdentifier,
+         type = ResolvedMonitoringLocationTypeName) %>%
+  mutate(type = ifelse(grepl('Lake',type),'Lake',type))
+
+
+
+site.vis <- read_feather('C:/Users/mrvr/Dropbox/UNC-PostDocAll/aquasat/2_rsdata/out/unique_site_inventory.feather') %>%
+  inner_join(inv_type) %>%
+  distinct(SiteID,lat,long,type)
+
+
+
+
+in.vis <- read_feather('C:/Users/mrvr/Dropbox/UNC-PostDocAll/aquasat/1_wqdata/out/wqp_lagos_unity.feather') 
+    
+
+```
+
+
+
