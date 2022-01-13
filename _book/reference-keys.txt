@@ -1,1 +1,5 @@
-goals
+tiny-intro
+workflow
+download
+aquasat-download
+aquasat-read

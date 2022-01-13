@@ -106,7 +106,7 @@ unzip('data/in/eco2.zip',exdir = 'data/in/ecoregion')
 
 ## AquaSat Read
 
-```{r}
+```{r, eval = F}
 inv_type <- read_feather('C:/Users/mrvr/Dropbox/UNC-PostDocAll/aquasat/1_wqdata/out/wqp_inventory.feather') %>%
     select(SiteID = MonitoringLocationIdentifier,
          type = ResolvedMonitoringLocationTypeName) %>%
