@@ -1,0 +1,9 @@
+book_filename: "Light Partitioning"
+delete_merged_file: true
+language:
+  ui:
+    chapter_name: "Part "
+rmd_files:
+  - "index.Rmd"
+  - "src/01_data_prep.Rmd"
+output_dir: "docs"
