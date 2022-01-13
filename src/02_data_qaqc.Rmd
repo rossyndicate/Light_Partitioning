@@ -1,0 +1,101 @@
+
+
+# (PART) Data downloads and decisions {-}
+
+# Data quality assessments
+
+Note, also eval = F to save computation time
+
+```{r, eval = F}
+
+library(tidyverse)
+library(sf)
+library(feather)
+library(GGally)
+library(mapview)
+
+```
+
+
+## Chl-a to biomass
+
+
+
+## Data Eval and Subset
+
+```{r, eval = F, include=FALSE}
+cut_offs <- in.vis %>%
+    mutate(chl_a_biomass = (chl_a/1000) * 100*2,
+         tss_dead = tss - chl_a_biomass) %>%
+    filter(tss_dead > 0.01) %>%
+    summarize(across(c(secchi,tss_dead,doc,chl_a_biomass),
+                ~  quantile(.,0.99,na.rm = T))) 
+  
+
+
+chl_vis <- in.vis %>%
+  select(-p_sand) %>%
+  filter(across(c(chl_a), ~!is.na(.))) %>%
+  inner_join(site.vis) %>%
+  filter(type != 'Facility')
+
+simul_vis <- in.vis %>%
+  select(-p_sand) %>%
+  filter(across(c(chl_a,doc,secchi,tss), ~!is.na(.))) %>%
+  inner_join(site.vis) %>%
+  filter(type != 'Facility')
+
+
+#get WQP methods for post-hoc investigation of errors
+
+simul_methods <-  data.table::fread('C:/Users/mrvr/Dropbox/UNC-PostDocAll/aquasat/1_wqdata/out/wqp_long_with_methods.csv') %>%
+  filter(SiteID %in% simul_vis$SiteID)
+
+simul_methods_time_fix <- simul_methods %>%
+  mutate(time = as.character(format(date_time, '%H:%M:%S')), 
+         date_only=ifelse(is.na(date_time) | time == '00:00:00',T,F), 
+         date_unity = ymd_hms(ifelse(date_only == T,
+                              paste(date,'12:00:00'),
+                              as.character(date_time)),
+                              tz='UTC')) %>%
+         mutate(time = as.character(format(date_unity, '%H:%M:%S')),
+         date_unity = ifelse(time == '00:00:00',
+          date_unity + hours(12),
+          date_unity) %>% #Convert back to poxict ()
+           as.POSIXct(.,origin='1970-01-01 00:00:00',tz='UTC')) %>%
+    #remove any time stamps that are NA
+  filter(!is.na(date_unity)) %>%
+  filter(year(date_unity) > 1900,
+         year(date_unity) <= year(Sys.Date())) %>%
+  #select(SiteID,date,characteristicName) %>%
+  as_tibble() %>%
+  dplyr::select(-date_only) %>%
+  mutate(harmonized_parameter = gsub('chl.a','chl_a',harmonized_parameter))
+
+
+
+simul_vis_long <- simul_vis %>%
+  pivot_longer(cols = chl_a:tss,names_to = 'harmonized_parameter') 
+
+
+
+
+simul_vis_methods <- full_join(simul_methods_time_fix,simul_vis_long) 
+
+
+
+
+simul_vis %>%
+  arrange(date_unity) %>%
+  mutate(year_bin = cut(date_unity, breaks = 8)) %>%
+  group_by(year_bin) %>%
+  summarize(count = n())
+
+
+ggplot(simul_vis, aes(x=date_unity, y = doc)) + 
+  geom_point()
+
+write_csv(simul_vis, 'simul1.csv')
+write_csv(simul_vis_methods,'simul_methods.csv')
+write_csv(chl_vis, 'chl.csv')
+```

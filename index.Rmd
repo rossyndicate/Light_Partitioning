@@ -33,12 +33,13 @@ In its simplest form our workflow is:
 
 1. Download all of [AquaSat](https://figshare.com/collections/AquaSat/4506140) and join disparate AquaSat pieces together
 
-2. Investigate data quality of AquaSat and select a subset of data
-where chl-a, doc, tss, and secchi were all measured simultaneously
-
-3. Investigate the relationship between chl-a, tis (inorganic sediment),
+2. Investigate the relationship between chl-a, tis (inorganic sediment),
 non-algal particles (dead particles), and algae biomass to build a
 dataset of algal biomass, non-algal particle mass, and dissolved organic carbon mass. 
+
+3. Investigate data quality of AquaSat and select a subset of data
+where chl-a, doc, tss, and secchi were all measured simultaneously
+
 
 4. Build a model that predicts light extinction (1.4/secchi)
 using algal particles, non-algal particles, and doc.
@@ -48,3 +49,4 @@ each parameter, apply this model to visualizations in ternary space
 
 6. Explore systematic controls on relative contribution to light
 extinction over space and time across CONUS. 
+

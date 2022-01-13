@@ -2,15 +2,16 @@
 
 # (PART) Data downloads and decisions {-}
 
-# Download
+# Download and Join
 
 
 I recognize that I should probably just use `targets` for this part, but...
 I (Matt Ross) don't know how to use targets yet! So, instead we are just
-going to have a code chunk here that just downloads all the data directly
-from figshare, and the chunk will just be set to `eval = FALSE`, so it won't
+going to have several code chunks here that just downloads all the data directly
+from figshare, preps data for analysis, etc...
+and the chunks will just be set to `eval = FALSE`, so they won't
 run unless you manually run it. That way this book can run in reasonable timeframes,
-most other chunks will run based on "cacheing." Though, some data intensive tasks,
+most other chunks will run based on "caching." Though, some data intensive tasks,
 will also simply have `eval = F` to save runtime. These chunks will be flagged
 explicitly, and all their data products saved to a `data/out` folder. 
 
@@ -55,27 +56,105 @@ unzip('data/in/eco2.zip',exdir = 'data/in/ecoregion')
 
 ```
 
-## AquaSat Read
+## AquaSat Read and join. 
+
+Note, also eval = F to save computation time
 
 ```{r, eval = F}
-inv_type <- read_feather('C:/Users/mrvr/Dropbox/UNC-PostDocAll/aquasat/1_wqdata/out/wqp_inventory.feather') %>%
+
+library(tidyverse)
+library(sf)
+library(feather)
+library(GGally)
+library(mapview)
+
+# This is only useful because it has type (lake/stream/etc...)
+inv_type <- read_feather('data/in/inv.feather') %>%
     select(SiteID = MonitoringLocationIdentifier,
          type = ResolvedMonitoringLocationTypeName) %>%
   mutate(type = ifelse(grepl('Lake',type),'Lake',type))
 
 
-
-site.vis <- read_feather('C:/Users/mrvr/Dropbox/UNC-PostDocAll/aquasat/2_rsdata/out/unique_site_inventory.feather') %>%
+#Real inventory
+site.vis <- read_feather('data/in/unq_site.feather') %>%
   inner_join(inv_type) %>%
   distinct(SiteID,lat,long,type)
 
 
 
-
-in.vis <- read_feather('C:/Users/mrvr/Dropbox/UNC-PostDocAll/aquasat/1_wqdata/out/wqp_lagos_unity.feather') 
+# Complete in-situ data, 6.5 million records. 
+in.vis <- read_csv('data/in/aq_situ/in-situ/wqp_lagos_unity.csv') 
     
 
 ```
 
+## Data Eval and Subset
+
+
+### Selecting only simultaneous observations
+
+I think the code mostly speaks for itself here
+```{r, eval = F}
+# Only bother with data that has complete simultaneous observations of
+# chl_a, doc, etc...
+
+simul_vis <- in.vis %>%
+  select(-p_sand) %>%
+  filter(across(c(chl_a,doc,secchi,tss), ~!is.na(.))) %>%
+  inner_join(site.vis) %>%
+  filter(type != 'Facility') %>%
+  #Set some reasonable thresholds, AquaSat is too generous
+  filter(secchi < 15,
+         chl_a < 1000,## ug/L
+         tss < 1000, ## mg/L
+         doc < 50)
+
+#
+write_csv(simul_vis, 'data/out/simul.csv')
+
+
+```
+
+
+
+## Where are sites with simultaneous observations of clarity constituents? 
+
+
+```{r}
+
+simul_vis <- read_csv('data/out/simul.csv')
+
+unique_simul <- simul_vis %>%
+  distinct(SiteID, lat, long, type) %>%
+  st_as_sf(.,coords = c('long','lat'), crs = 4326)
+
+mapviewOptions(fgb = FALSE) # remove flat geobuff which breaks display
+mapview(unique_simul, zcol = 'type')
+
+```
+
+
+## What is the general relationiship between variables in log log space
+
+```{r, cache = T}
+
+
+log_simul <- simul_vis %>%
+  dplyr::mutate(across(c(secchi,chl_a,tss,doc,tis),log10)) %>%
+  dplyr::filter(across(c(chl_a,doc,secchi,tss), ~!is.na(.) & . < Inf & . > -Inf)) 
+
+
+log_simul %>%
+  sample_frac(0.2) %>%
+  ungroup() %>%
+  select(secchi,chl_a,tss,doc,type) %>%
+  ggpairs(lower = list(continuous = wrap('points',shape = 1)),
+          diag = list(continuous = wrap('densityDiag', alpha = 0.5)),
+         mapping = ggplot2::aes(color = type),
+         columns = c('secchi','chl_a','tss','doc')) +
+  ggthemes::theme_few() + 
+  scale_color_manual(values = c('seagreen3','skyblue3','saddlebrown'))
+
+```
 
 

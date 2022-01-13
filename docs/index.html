@@ -34,7 +34,7 @@
   
   
 
-<link rel="next" href="download.html"/>
+<link rel="next" href="download-and-join.html"/>
 <script src="libs/header-attrs-2.11/header-attrs.js"></script>
 <script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.4.6/dist/fuse.min.js"></script>
@@ -55,6 +55,22 @@
 
 <link href="libs/anchor-sections-1.0.1/anchor-sections.css" rel="stylesheet" />
 <script src="libs/anchor-sections-1.0.1/anchor-sections.js"></script>
+<script src="libs/htmlwidgets-1.5.4/htmlwidgets.js"></script>
+<link href="libs/leaflet-1.3.1/leaflet.css" rel="stylesheet" />
+<script src="libs/leaflet-1.3.1/leaflet.js"></script>
+<link href="libs/leafletfix-1.0.0/leafletfix.css" rel="stylesheet" />
+<script src="libs/proj4-2.6.2/proj4.min.js"></script>
+<script src="libs/Proj4Leaflet-1.0.1/proj4leaflet.js"></script>
+<link href="libs/rstudio_leaflet-1.3.1/rstudio_leaflet.css" rel="stylesheet" />
+<script src="libs/leaflet-binding-2.0.4.1/leaflet.js"></script>
+<script src="libs/leaflet-providers-1.9.0/leaflet-providers_1.9.0.js"></script>
+<script src="libs/leaflet-providers-plugin-2.0.4.1/leaflet-providers-plugin.js"></script>
+<link href="libs/HomeButton-0.0.1/home-button.css" rel="stylesheet" />
+<script src="libs/HomeButton-0.0.1/home-button.js"></script>
+<script src="libs/HomeButton-0.0.1/easy-button-src.min.js"></script>
+<script src="libs/clipboard-0.0.1/setClipboardText.js"></script>
+<link href="libs/mapviewCSS-0.0.1/mapview-popup.css" rel="stylesheet" />
+<link href="libs/mapviewCSS-0.0.1/mapview.css" rel="stylesheet" />
 
 
 <style type="text/css">
@@ -141,10 +157,16 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <li class="chapter" data-level="1.1" data-path="index.html"><a href="index.html#workflow"><i class="fa fa-check"></i><b>1.1</b> Workflow</a></li>
 </ul></li>
 <li class="part"><span><b>II Data downloads and decisions</b></span></li>
-<li class="chapter" data-level="2" data-path="download.html"><a href="download.html"><i class="fa fa-check"></i><b>2</b> Download</a>
+<li class="chapter" data-level="2" data-path="download-and-join.html"><a href="download-and-join.html"><i class="fa fa-check"></i><b>2</b> Download and Join</a>
 <ul>
-<li class="chapter" data-level="2.1" data-path="download.html"><a href="download.html#aquasat-download"><i class="fa fa-check"></i><b>2.1</b> AquaSat download</a></li>
-<li class="chapter" data-level="2.2" data-path="download.html"><a href="download.html#aquasat-read"><i class="fa fa-check"></i><b>2.2</b> AquaSat Read</a></li>
+<li class="chapter" data-level="2.1" data-path="download-and-join.html"><a href="download-and-join.html#aquasat-download"><i class="fa fa-check"></i><b>2.1</b> AquaSat download</a></li>
+<li class="chapter" data-level="2.2" data-path="download-and-join.html"><a href="download-and-join.html#aquasat-read-and-join."><i class="fa fa-check"></i><b>2.2</b> AquaSat Read and join.</a></li>
+<li class="chapter" data-level="2.3" data-path="download-and-join.html"><a href="download-and-join.html#data-eval-and-subset"><i class="fa fa-check"></i><b>2.3</b> Data Eval and Subset</a>
+<ul>
+<li class="chapter" data-level="2.3.1" data-path="download-and-join.html"><a href="download-and-join.html#selecting-only-simultaneous-observations"><i class="fa fa-check"></i><b>2.3.1</b> Selecting only simultaneous observations</a></li>
+</ul></li>
+<li class="chapter" data-level="2.4" data-path="download-and-join.html"><a href="download-and-join.html#where-are-sites-with-simultaneous-observations-of-clarity-constituents"><i class="fa fa-check"></i><b>2.4</b> Where are sites with simultaneous observations of clarity constituents?</a></li>
+<li class="chapter" data-level="2.5" data-path="download-and-join.html"><a href="download-and-join.html#what-is-the-general-relationiship-between-variables-in-log-log-space"><i class="fa fa-check"></i><b>2.5</b> What is the general relationiship between variables in log log space</a></li>
 </ul></li>
 </ul>
 
@@ -182,11 +204,11 @@ ternary diagrams that partition light partitioning between DOC, algal cells, and
 <p>In its simplest form our workflow is:</p>
 <ol style="list-style-type: decimal">
 <li><p>Download all of <a href="https://figshare.com/collections/AquaSat/4506140">AquaSat</a> and join disparate AquaSat pieces together</p></li>
-<li><p>Investigate data quality of AquaSat and select a subset of data
-where chl-a, doc, tss, and secchi were all measured simultaneously</p></li>
 <li><p>Investigate the relationship between chl-a, tis (inorganic sediment),
 non-algal particles (dead particles), and algae biomass to build a
 dataset of algal biomass, non-algal particle mass, and dissolved organic carbon mass.</p></li>
+<li><p>Investigate data quality of AquaSat and select a subset of data
+where chl-a, doc, tss, and secchi were all measured simultaneously</p></li>
 <li><p>Build a model that predicts light extinction (1.4/secchi)
 using algal particles, non-algal particles, and doc.</p></li>
 <li><p>Use this model to extract light extinction coefficients for
@@ -206,7 +228,7 @@ extinction over space and time across CONUS.</p></li>
         </div>
       </div>
 
-<a href="download.html" class="navigation navigation-next navigation-unique" aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+<a href="download-and-join.html" class="navigation navigation-next navigation-unique" aria-label="Next page"><i class="fa fa-angle-right"></i></a>
     </div>
   </div>
 <script src="libs/gitbook-2.6.7/js/app.min.js"></script>

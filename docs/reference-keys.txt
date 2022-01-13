@@ -1,5 +1,9 @@
 tiny-intro
 workflow
-download
+download-and-join
 aquasat-download
-aquasat-read
+aquasat-read-and-join.
+data-eval-and-subset
+selecting-only-simultaneous-observations
+where-are-sites-with-simultaneous-observations-of-clarity-constituents
+what-is-the-general-relationiship-between-variables-in-log-log-space
