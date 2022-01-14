@@ -1,2 +1,3 @@
 # Light_Partitioning
-What alters available light in inland waters? 
+
+What particles, dissolved stuff, controls how much light penetrates inland waters? 
