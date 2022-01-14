@@ -6,4 +6,5 @@ language:
 rmd_files:
   - "index.Rmd"
   - "src/01_data_prep.Rmd"
+  - "src/02_data_qaqc.Rmd"
 output_dir: "docs"

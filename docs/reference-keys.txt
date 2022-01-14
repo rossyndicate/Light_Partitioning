@@ -1,3 +1,5 @@
+fig:unnamed-chunk-9
+fig:unnamed-chunk-11
 tiny-intro
 workflow
 download-and-join
@@ -7,3 +9,15 @@ data-eval-and-subset
 selecting-only-simultaneous-observations
 where-are-sites-with-simultaneous-observations-of-clarity-constituents
 what-is-the-general-relationiship-between-variables-in-log-log-space
+data-quality-assessments
+chl-a-to-biomass
+approach
+simple-evaluations-of-conversion
+negative-tss_dead
+relationship-between-chl-a-and-tss_dead
+data-driven-qaqc
+extracting-methods
+light-attenuation-model-and-residuals
+systematic-problems
+chl-a-methods
+chl-a-names

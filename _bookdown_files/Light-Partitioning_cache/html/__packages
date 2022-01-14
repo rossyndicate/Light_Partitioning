@@ -1,10 +1,3 @@
-base
-methods
-datasets
-utils
-grDevices
-graphics
-stats
 tidyverse
 ggplot2
 tibble
@@ -18,3 +11,7 @@ sf
 feather
 GGally
 mapview
+ggpp
+ggpmisc
+lubridate
+Metrics

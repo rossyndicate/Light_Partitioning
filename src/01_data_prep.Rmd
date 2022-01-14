@@ -109,7 +109,9 @@ simul_vis <- in.vis %>%
          tss < 1000, ## mg/L
          doc < 50)
 
-#
+# For speed
+write_feather(simul_vis, 'data/out/simul.feather')
+#For reproducibility
 write_csv(simul_vis, 'data/out/simul.csv')
 
 

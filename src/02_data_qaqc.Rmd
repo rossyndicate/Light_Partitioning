@@ -1,55 +1,190 @@
 
 
-# (PART) Data downloads and decisions {-}
 
 # Data quality assessments
 
 Note, also eval = F to save computation time
 
-```{r, eval = F}
+```{r, include = F}
 
 library(tidyverse)
 library(sf)
 library(feather)
 library(GGally)
 library(mapview)
-
+library(ggpmisc)
+library(lubridate)
+library(Metrics)
 ```
 
 
 ## Chl-a to biomass
 
+While it is more common in coastal and oceanic research, inland water scientists
+rarely measure water clarity constituents in the way that is most directly 
+transferable to our research question. Ideally we would routinely measure concentrations of
+algae biomass, non-algal particles
+(including inorganic sediment and organic sediment, I like to call this
+stuff dead suspended sediment, but I guess NAP is fine), and dissolved organic 
+carbon. These constituents all alter light penetration in water, but they are 
+mutually exclusive groups with no measurement overlap between algal particles and NAP
+for example. However, this is not what we usually measure. Instead, we have rich 
+datasets of things that could indicate our desired constituents. These map as basically.
+
+- Chlorophyll-a -> proxy for algae biomass.
+- Total suspended solids (tss) -> All suspended solids, subtract algae biomass = NAP
+- DOC -> DOC!
+
+That means we have to basically do one key calculation. Convert chl-a to biomass.
+Then subtract that from tss and assume that is NAP. While this is a absurdly
+simple calculation it is filled with dangers. The relationship between chl-a
+and algae biomass depends on temperature and nutrients and species and is 
+[not universal](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1002/2016GB005458).
+Most studies focus on Chl:C ratios, but we are interested in Chl:Biomass ratio,
+for which there are much fewer studies, though some studies below suggest 
+a range of 0.005 to 0.1 Chl:biomass. (I need to find the C:Biomass study I used
+forever ago.)
+
+Papers that help:
+
+https://aslopubs.onlinelibrary.wiley.com/doi/full/10.1002/lno.10338
+https://pubs.usgs.gov/twri/twri9a7/twri9a7_7.4.pdf
+https://www.researchgate.net/publication/230056019_Relationship_between_Chlorophyll-a_Concentration_and_Phytoplankton_Biomass_in_Several_Reservoirs_in_Czechoslovakia/link/5cb56c164585156cd79af804/download
+
+### Approach
+
+Our philosphy here is that we will use chl-a directly as a proxy for algal biomass
+to minimize the number of transformations to this data, since we are primarily
+interested in how algae alters light attenuation, regardless of how we estimate algae.
+However, we still need to calculate Non-Algal Particle mass. For that we will
+use a range of values of Chl:biomass and show the impact of picking a variety 
+of ranges. 
+
+*Caveats*
+
+ - We don't have a true NAP to compare how accurate our approach is.
+ 
+ - We do have Inorganic Sediment, but that is not the same thing as non-algal 
+ particles, since it excludes particulate organic carbon. Still, where
+ we have it, we will examine the relationship between NAP and TIS (total 
+ inorganic sediment). 
+ 
+ - Not entirely sure how we propogate this uncertainty downstream? Pick an average?
 
 
-## Data Eval and Subset
 
-```{r, eval = F, include=FALSE}
-cut_offs <- in.vis %>%
-    mutate(chl_a_biomass = (chl_a/1000) * 100*2,
-         tss_dead = tss - chl_a_biomass) %>%
-    filter(tss_dead > 0.01) %>%
-    summarize(across(c(secchi,tss_dead,doc,chl_a_biomass),
-                ~  quantile(.,0.99,na.rm = T))) 
-  
+```{r}
+
+in_vis <- read_feather('data/out/simul.feather')
+
+range <- c(1/0.005, 1/0.01, 1/0.05,1/0.1)
+
+#Couldn't think of a more clever way to multiply
+#chl_a by the range of values, so just made
+# dataframe 4 times bigger with new column called ratio. 
+nap_test <- expand_grid(in_vis,chl_ratio = range) %>%
+  mutate(chl_a_biomass = (chl_a/1000)*chl_ratio,
+         tss_dead = tss-chl_a_biomass)
+
+```
+
+### Simple evaluations of conversion
 
 
-chl_vis <- in.vis %>%
-  select(-p_sand) %>%
-  filter(across(c(chl_a), ~!is.na(.))) %>%
-  inner_join(site.vis) %>%
-  filter(type != 'Facility')
+#### Negative tss_dead
 
-simul_vis <- in.vis %>%
-  select(-p_sand) %>%
-  filter(across(c(chl_a,doc,secchi,tss), ~!is.na(.))) %>%
-  inner_join(site.vis) %>%
-  filter(type != 'Facility')
+Probably the simplest way to see which ratios are more appropriate is to
+look at how that impacts how many tss_dead observations are negative (impossible).
 
+```{r}
+
+
+
+nap_test %>%
+  mutate(negative = ifelse(tss_dead < 0, 'neg', 'pos')) %>%
+  group_by(negative,chl_ratio) %>%
+  count() %>%
+  pivot_wider(names_from = 'negative',values_from = 'n') %>%
+  mutate(percent_neg = neg/(pos+neg)*100) %>%
+  knitr::kable()
+
+```
+
+
+Well, that sort of produces obvious results. Smaller ratios mean, less negative 
+NAP estimates, but there is a big increase between 100-200, making me think the
+"correct" ratio may be in there somewhere. 
+
+
+#### Relationship between chl-a and tss_dead
+
+If you recall from the previous section, there was a strong linear 
+relationship between chl-a and tss across all sites and water types (r2 > 0.35).
+One effect we'd expect to see with the tss_dead estimate is that this relationship
+should decay. While there are reasons for chl-a to be correlated with tss (sediment
+brings nutrients for example), chl-a also includes algal cells which are suspended
+particles themselves. If this approach worked well, we should see weaker relationships
+between tss_dead and chl-a
+
+
+```{r, cache = T, fig.width = 7,fig.height = 7, fig.cap = "At low chl_ratios (10/20), there is really no change to the correlation between tss and chl_a, but at higher ratios (100/200), the relationship does breakdown some, though not completely"}
+
+
+#Subset for plotting purposes
+nap_test %>%
+  #Remove negatives and very small numbers (ug/L of sediment is basically zero)
+  filter(tss_dead > 0.001) %>%
+  sample_frac(0.1) %>%
+ggplot(., aes(chl_a,tss_dead,color = type)) +
+  facet_wrap(~chl_ratio) + 
+  geom_point() + 
+  scale_x_log10() + 
+  scale_y_log10() + 
+  stat_poly_eq() + 
+  ggthemes::theme_few() + 
+  scale_color_manual(values = c('seagreen3','skyblue3','saddlebrown')) 
+
+```
+
+
+- What to do with this? 
+- I prefer just 100 going forward. Mostly goldilocks preference tho 
+
+
+
+## Data-driven qa/qc
+
+We know that data in the water quality portal (and therfore in aquasat) comes
+with inherent biases and problems that are a natural part of aggregated massive
+datasets like the WQP. So how do we evaluate data quality in this context? Here
+we assume that some answers about data quality can be found in the original 
+WQP data context including analytical and field methods data as well as 
+information about which organizations collected the sample. 
+
+The sketchy part? We don't have a systematic way to understand if data is unreliable
+except for... The contributions of each our constituents to clarity should be limited
+by physical limits of how light interacts with particles, algae, and DOC. So if 
+we build a model of light extinction as a function of f(doc, chl_a, tss_dead), the
+worst residuals on that model, might inform data quality. Then we can subset data
+to only include data of the highest quality. 
+
+
+### Extracting methods
+
+AquaSat chose (I) to remove methods info from the raw wqp data, but we kept it
+in a second file that we already downloaded. We just need to manipulate that data
+to play nice with our simultaneous observation data. 
+
+
+```{r, eval = F}
+
+#This chunk is slow and therefore not run in bookdown. 
 
 #get WQP methods for post-hoc investigation of errors
 
-simul_methods <-  data.table::fread('C:/Users/mrvr/Dropbox/UNC-PostDocAll/aquasat/1_wqdata/out/wqp_long_with_methods.csv') %>%
-  filter(SiteID %in% simul_vis$SiteID)
+
+simul_methods <-  data.table::fread('data/in/aq_situ/in-situ/wqp_long_with_methods.csv') %>%
+  dplyr::filter(SiteID %in% in_vis$SiteID)
 
 simul_methods_time_fix <- simul_methods %>%
   mutate(time = as.character(format(date_time, '%H:%M:%S')), 
@@ -74,7 +209,7 @@ simul_methods_time_fix <- simul_methods %>%
 
 
 
-simul_vis_long <- simul_vis %>%
+simul_vis_long <- in_vis %>%
   pivot_longer(cols = chl_a:tss,names_to = 'harmonized_parameter') 
 
 
@@ -83,19 +218,132 @@ simul_vis_long <- simul_vis %>%
 simul_vis_methods <- full_join(simul_methods_time_fix,simul_vis_long) 
 
 
-
-
-simul_vis %>%
-  arrange(date_unity) %>%
-  mutate(year_bin = cut(date_unity, breaks = 8)) %>%
-  group_by(year_bin) %>%
-  summarize(count = n())
-
-
-ggplot(simul_vis, aes(x=date_unity, y = doc)) + 
-  geom_point()
-
-write_csv(simul_vis, 'simul1.csv')
-write_csv(simul_vis_methods,'simul_methods.csv')
-write_csv(chl_vis, 'chl.csv')
+#Fast
+feather::write_feather(simul_vis_methods, 'data/out/simul_methods.feather')
+# Reproducible
+write_csv(simul_vis_methods,'data/out/simul_methods.csv')
 ```
+
+
+
+### Light attenuation model and residuals
+
+Model assumptions
+
+- Not searching for intercept assuming observed 0.15 coefficient for intercept (pure water attenuation)
+
+- For now, not doing the middle 2.5-97.5% of data, can add back in.
+
+- Normality assumptions aren't fully met
+
+
+
+```{r, warning = F, cache = T, fig.cap = 'modelled light extinction coefficient versus observed, red line is 1:1 line and blue is line of best fit'}
+
+nap_100 <- nap_test %>%
+  filter(chl_ratio == 100,
+         tss_dead > 0.001) %>%
+  mutate(secchi = ifelse(secchi < 0.01,0.01,secchi),
+        kd = (1.4/(secchi))) 
+
+
+k_w <- 1/1.5/max(nap_100$secchi)
+
+
+kd_mod <- lm((kd-k_w)  ~ 0 +tss_dead + doc + chl_a, data = nap_100)
+
+
+nap_100$pred <- predict(kd_mod,nap_100) + k_w
+nap_100$residuals <- (nap_100$kd - nap_100$pred)
+
+
+nap_100 %>%
+  sample_frac(0.3) %>%
+  ggplot(., aes(kd,pred)) + 
+  geom_point(shape = 1) + 
+  ggthemes::theme_few() + 
+  xlab('kd (1.4/secchi)') +
+  ylab('predicted kd') +
+  scale_x_log10() + 
+  scale_y_log10() +
+  stat_smooth(method = 'lm',se = F) +
+  geom_abline(intercept = 0, slope = 1, col = 'red')
+
+
+```
+
+
+### Systematic problems? 
+
+#### Chl-a methods
+
+```{r, fig.width = 12, fig.height = 8}
+
+simul_vis_methods <- feather::read_feather('data/out/simul_methods.feather')
+methods_summarizer <- function(param = 'chl_a'){
+  
+  methods <- simul_vis_methods %>%
+    filter(harmonized_parameter == param) %>%
+    inner_join(nap_100 %>%
+                 select(SiteID,date_unity,residuals,pred,kd)) %>%
+    filter(!is.na(characteristicName))
+  
+  
+  method_plot <- methods %>%
+    group_by(analytical_method) %>%
+    add_count() %>%
+    mutate(method_count = paste('n =',n,'-',analytical_method)) %>%
+    ggplot(., aes(kd,pred,color = method_count)) + 
+    #geom_point(shape = 1) + 
+    ggthemes::theme_few() + 
+    xlab('kd (1.4/secchi)') +
+    ylab('predicted kd') +
+    scale_x_log10() + 
+    scale_y_log10() + 
+    stat_smooth(method = 'lm',se=F) +
+    geom_abline(intercept = 0, slope = 1, col = 'black')
+  
+  
+  method_error <- methods %>%
+    group_by(analytical_method) %>%
+    summarize(rmse = rmse(kd,pred),
+              n = n())
+  
+  name_error <- methods %>%
+    group_by(characteristicName) %>%
+    summarize(rmse = rmse(kd,pred),
+              n = n())
+  
+  name_plot <- methods %>%
+    group_by(characteristicName) %>%
+    add_count() %>%
+    mutate(name_count = paste('n =',n,'-',characteristicName)) %>%
+    ggplot(., aes(kd,pred,color = name_count)) + 
+    #geom_point(shape = 1) + 
+    ggthemes::theme_few() + 
+    xlab('kd (1.4/secchi)') +
+    ylab('predicted kd') +
+    scale_x_log10() + 
+    scale_y_log10() + 
+    stat_smooth(method = 'lm',se=F) +
+    geom_abline(intercept = 0, slope = 1, col = 'black')
+  
+  return(list(method_error,name_error,method_plot,name_plot))
+  
+}
+
+chl_errors <- methods_summarizer('chl_a')
+
+knitr::kable(chl_errors[[1]])
+```
+
+
+#### Chl-a names
+
+```{r}
+knitr::kable(chl_errors[[2]])
+
+```
+
+
+
