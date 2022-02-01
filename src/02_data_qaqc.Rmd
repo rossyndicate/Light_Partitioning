@@ -15,6 +15,9 @@ library(mapview)
 library(ggpmisc)
 library(lubridate)
 library(Metrics)
+library(kableExtra)
+
+knitr::opts_chunk$set(warning = F, message = F)
 ```
 
 
@@ -47,9 +50,13 @@ forever ago.)
 
 Papers that help:
 
-https://aslopubs.onlinelibrary.wiley.com/doi/full/10.1002/lno.10338
-https://pubs.usgs.gov/twri/twri9a7/twri9a7_7.4.pdf
-https://www.researchgate.net/publication/230056019_Relationship_between_Chlorophyll-a_Concentration_and_Phytoplankton_Biomass_in_Several_Reservoirs_in_Czechoslovakia/link/5cb56c164585156cd79af804/download
+  - https://aslopubs.onlinelibrary.wiley.com/doi/full/10.1002/lno.10338
+
+  - https://pubs.usgs.gov/twri/twri9a7/twri9a7_7.4.pdf
+
+  - https://www.researchgate.net/publication/230056019_Relationship_between_Chlorophyll-a_Concentration_and_Phytoplankton_Biomass_in_Several_Reservoirs_in_Czechoslovakia/link/5cb56c164585156cd79af804/download
+
+  - https://archimer.ifremer.fr/doc/2005/publication-1172.pdf
 
 ### Approach
 
@@ -77,18 +84,24 @@ of ranges.
 
 in_vis <- read_feather('data/out/simul.feather')
 
-range <- c(1/0.005, 1/0.01, 1/0.05,1/0.1)
+range <- c(50, 100, 200, 234)
+
+
 
 #Couldn't think of a more clever way to multiply
 #chl_a by the range of values, so just made
 # dataframe 4 times bigger with new column called ratio. 
 nap_test <- expand_grid(in_vis,chl_ratio = range) %>%
-  mutate(chl_a_biomass = (chl_a/1000)*chl_ratio,
+  mutate(power = ifelse(chl_ratio == 234, 0.57, 1),
+         chl_a_biomass = exp(log(chl_ratio/1000)+log(chl_a)*power),
          tss_dead = tss-chl_a_biomass)
+
 
 ```
 
 ### Simple evaluations of conversion
+
+
 
 
 #### Negative tss_dead
@@ -101,11 +114,11 @@ look at how that impacts how many tss_dead observations are negative (impossible
 
 
 nap_test %>%
-  mutate(negative = ifelse(tss_dead < 0, 'neg', 'pos')) %>%
+  mutate(negative = ifelse(tss_dead < 0, 'negative', 'positive')) %>%
   group_by(negative,chl_ratio) %>%
   count() %>%
-  pivot_wider(names_from = 'negative',values_from = 'n') %>%
-  mutate(percent_neg = neg/(pos+neg)*100) %>%
+  pivot_wider(names_from = 'negative',values_from = 'n')  %>%
+  mutate(percent_neg = negative/(positive+negative)*100) %>%
   knitr::kable()
 
 ```
@@ -148,11 +161,12 @@ ggplot(., aes(chl_a,tss_dead,color = type)) +
 
 
 - What to do with this? 
-- I prefer just 100 going forward. Mostly goldilocks preference tho 
-
+- 234*chl^0.57 seems logical but still high correlation in lakes between tss/chl_a,
+but that may be a real thing for lakes? (corr is actually higher with this approach)
 
 
 ## Data-driven qa/qc
+
 
 We know that data in the water quality portal (and therfore in aquasat) comes
 with inherent biases and problems that are a natural part of aggregated massive
@@ -240,34 +254,55 @@ Model assumptions
 
 ```{r, warning = F, cache = T, fig.cap = 'modelled light extinction coefficient versus observed, red line is 1:1 line and blue is line of best fit'}
 
-nap_100 <- nap_test %>%
-  filter(chl_ratio == 100,
-         tss_dead > 0.001) %>%
+
+nap_est <- nap_test %>%
+  filter(tss_dead > 0.001) %>%
   mutate(secchi = ifelse(secchi < 0.01,0.01,secchi),
-        kd = (1.4/(secchi))) 
+        kd = (1/(secchi))) 
 
 
-k_w <- 1/1.5/max(nap_100$secchi)
+k_w <- 1/1.5/max(nap_est$secchi)
 
 
-kd_mod <- lm((kd-k_w)  ~ 0 +tss_dead + doc + chl_a, data = nap_100)
+kd_mod <- function(df){
+  mod <- lm((kd-k_w)  ~ 0 +tss_dead + doc + chl_a, data = df)
+}
 
 
-nap_100$pred <- predict(kd_mod,nap_100) + k_w
-nap_100$residuals <- (nap_100$kd - nap_100$pred)
+kd_resid_extract <- function(df,mod){
+  df <- df %>%
+    mutate(residuals = mod$residuals,
+           pred = mod$fitted.values)
+}
 
 
-nap_100 %>%
-  sample_frac(0.3) %>%
+nap_mods <- group_by(nap_est,chl_ratio) %>%
+  nest() %>%
+  mutate(mods = map(data,kd_mod),
+         data = map2(data, mods, kd_resid_extract))
+
+
+nap_resid <- nap_mods %>%
+  dplyr::select(-mods) %>%
+  unnest(data) %>%
+  mutate(ratio_rmse = paste('ratio =',chl_ratio,', RMSE =', round(rmse(kd,pred),3)))
+
+
+
+nap_resid %>%
+  sample_frac(0.1) %>%
   ggplot(., aes(kd,pred)) + 
   geom_point(shape = 1) + 
+  facet_wrap(~ratio_rmse) + 
   ggthemes::theme_few() + 
   xlab('kd (1.4/secchi)') +
   ylab('predicted kd') +
   scale_x_log10() + 
   scale_y_log10() +
   stat_smooth(method = 'lm',se = F) +
-  geom_abline(intercept = 0, slope = 1, col = 'red')
+  geom_abline(intercept = 0, slope = 1, col = 'red') 
+
+
 
 
 ```
@@ -275,19 +310,21 @@ nap_100 %>%
 
 ### Systematic problems? 
 
-#### Chl-a methods
+#### Analytical Methods and Error Characterization
 
 ```{r, fig.width = 12, fig.height = 8}
 
+
 simul_vis_methods <- feather::read_feather('data/out/simul_methods.feather')
+
+
 methods_summarizer <- function(param = 'chl_a'){
   
   methods <- simul_vis_methods %>%
     filter(harmonized_parameter == param) %>%
-    inner_join(nap_100 %>%
-                 select(SiteID,date_unity,residuals,pred,kd)) %>%
-    filter(!is.na(characteristicName))
-  
+    inner_join(nap_est %>%
+                 select(SiteID,date_unity,residuals,pred,kd)) 
+
   
   method_plot <- methods %>%
     group_by(analytical_method) %>%
@@ -307,12 +344,25 @@ methods_summarizer <- function(param = 'chl_a'){
   method_error <- methods %>%
     group_by(analytical_method) %>%
     summarize(rmse = rmse(kd,pred),
-              n = n())
+              resid_cv = sd(residuals)/mean(residuals),
+              n = n(),
+              resid_se = sd(residuals)/(n^0.5),
+              mdae = mdae(kd,pred)) %>%
+    arrange(-n) %>%
+    mutate(across(is.numeric, ~(round(.x, 2))),
+           param = param)
   
   name_error <- methods %>%
     group_by(characteristicName) %>%
     summarize(rmse = rmse(kd,pred),
-              n = n())
+              resid_cv = sd(residuals)/mean(residuals),
+              n = n(),
+              resid_se = sd(residuals)/(n^0.5),
+              mdae = mdae(kd,pred)) %>%
+    arrange(-n) %>%
+    mutate(across(is.numeric, ~(round(.x, 2))),
+           param = param)
+  
   
   name_plot <- methods %>%
     group_by(characteristicName) %>%
@@ -328,17 +378,29 @@ methods_summarizer <- function(param = 'chl_a'){
     stat_smooth(method = 'lm',se=F) +
     geom_abline(intercept = 0, slope = 1, col = 'black')
   
+  
+  
   return(list(method_error,name_error,method_plot,name_plot))
   
 }
 
 chl_errors <- methods_summarizer('chl_a')
+doc_errors <- methods_summarizer('doc')
+tss_errors <- methods_summarizer('tss')
+secchi_errors <- methods_summarizer('secchi')
 
-knitr::kable(chl_errors[[1]])
+method_errors <- rbind(chl_errors[[1]],doc_errors[[1]],
+                    tss_errors[[1]],secchi_errors[[1]])
+
+
+knitr::kable(method_errors) %>%
+  kable_paper() %>%
+  scroll_box(width = '100%', height = '600px') %>%
+  kable_styling(bootstrap_options = 'striped', full_width = )
 ```
 
 
-#### Chl-a names
+### Param Name Errors 
 
 ```{r}
 knitr::kable(chl_errors[[2]])
@@ -346,4 +408,20 @@ knitr::kable(chl_errors[[2]])
 ```
 
 
+#### Jettison
 
+- ADD SQUARE METHOD for chl-a to biomass
+
+- CV of RMSE, 
+
+- Keep most abundant methods? 
+
+- Remove worst 
+
+- Keep most numerous
+
+- Boost on errors
+
+- High tss dead = high error. 
+
+- 1/secchi

@@ -21,3 +21,7 @@ light-attenuation-model-and-residuals
 systematic-problems
 chl-a-methods
 chl-a-names
+fig:unnamed-chunk-4
+fig:unnamed-chunk-6
+analytical-methods-and-error-characterization
+jettison
