@@ -17,11 +17,9 @@ negative-tss_dead
 relationship-between-chl-a-and-tss_dead
 data-driven-qaqc
 extracting-methods
-light-attenuation-model-and-residuals
-systematic-problems
-chl-a-methods
-chl-a-names
-fig:unnamed-chunk-4
-fig:unnamed-chunk-6
+light-attenuation-model-exploration
+variation-in-slopes-w-different-chl-biomass-ratios
+exploring-data-and-model-results-for-systematic-problems
 analytical-methods-and-error-characterization
-jettison
+param-name-errors
+methods-predicting-errors
