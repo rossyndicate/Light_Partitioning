@@ -1,0 +1,331 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+
+
+# Data quality assessments
+
+Note, also eval = F to save computation time
+
+```{r, include = F}
+
+library(tidyverse)
+library(sf)
+library(feather)
+library(GGally)
+library(mapview)
+library(ggpmisc)
+library(lubridate)
+library(Metrics)
+library(kableExtra)
+library(broom)
+
+knitr::opts_chunk$set(warning = F, message = F)
+```
+
+
+
+```{r}
+
+```
+
+
+```{r, include = F}
+load('data/out/mod_234.Rdata')
+
+mod <- mod234 %>%
+  pull(mods) %>%
+  .[[1]]
+
+
+k_w <- 1/1.5/15
+
+
+no_sech <- read_feather('data/out/no_secchi_clean.feather') %>%
+  mutate(kd_pred = predict(mod,.) + k_w,
+         secchi_pred = round(1/kd_pred,2))
+
+
+
+
+
+d234 <- no_sech %>%
+  mutate(tss_kd = ((mod$coefficients[1])*tss_dead)/kd_pred,
+         doc_kd = ((mod$coefficients[2])*doc)/kd_pred,
+         chl_kd = ((mod$coefficients[3])*chl_a)/kd_pred,
+         test_1 = tss_kd + doc_kd + chl_kd) %>%
+  dplyr::filter(if_any(c(tss_kd,doc_kd,chl_kd), ~ . >= 0 & . <= 1))
+
+
+
+```
+
+# Results
+
+
+To have results we need to find some interesting candidate sites to explore. These
+will be places that either 1) have lots of repeat data (temporal variation) or 2) 
+have lots of spatial data (spatial variation), or ideally both!
+
+
+## Temporal Variation
+
+
+### Sites with long-term records
+
+Long-term means:
+
+  - At least 10 years of data with at least 3 observations in each year
+
+
+```{r}
+
+library(ggtern)
+
+
+long_terms <- d234 %>%
+  group_by(lat,long,SiteID) %>%
+  distinct(date_unity,.keep_all = T) %>%
+  mutate(year = year(date_unity)) %>%
+  mutate(n_years = n_distinct(year)) %>%
+  filter(n_years > 5) %>%
+  mutate(range = paste(min(year),max(year)))
+
+# ggtern(d234, aes(tss_kd,doc_kd,chl_kd,
+#                  size = secchi_pred)) + 
+#     geom_point(shape = 19) +
+#     scale_color_viridis_c() + 
+#     theme_bw() + 
+#     scale_size(range = c(0.1,3)) + 
+#     theme_showarrows() + 
+#     labs(x = 'TSS', 
+#          y = 'DOC',
+#          z = 'Algae') 
+
+year_plotter <- function(df = nested_long$data[[1]]){
+  ggtern(df, aes(tss_kd,doc_kd,chl_kd,color = year,
+                 size = secchi_pred)) + 
+    geom_point(shape = 19) +
+    scale_color_viridis_c() + 
+    theme_bw() + 
+    scale_size(range = c(0.5,2)) + 
+    theme_showarrows() + 
+    labs(x = 'TSS', 
+         y = 'DOC',
+         z = 'Algae') + 
+    ggtitle(paste(unique(df$id)))
+}
+
+nested_long <- long_terms %>%
+  group_by(lat,long,SiteID, year, type) %>%
+  mutate(n = n()) %>%
+  filter(n > 2) %>%
+  summarize(across(where(is.numeric), mean)) %>%
+  group_by(lat, long, SiteID, type) %>%
+  mutate(id = SiteID) %>%
+  nest() %>%
+  ungroup() %>%
+  mutate(mean_plots = map(data, year_plotter))
+
+
+site_sf <- long_terms %>%
+  distinct(lat,long,SiteID,range, n_years) %>% 
+  inner_join(nested_long) %>%
+  st_as_sf(.,coords = c('long','lat'), crs = 4326) %>%
+  ungroup() 
+
+
+# mapviewOptions(fgb = F)
+# m1 <- mapview(site_sf,
+#               zcol = 'n_years',
+#               popup = leafpop::popupGraph(site_sf$mean_plots))
+# 
+# 
+# 
+# 
+# mapshot(m1, url = 'long_terms.html')
+```
+
+
+
+### Seasonal variation
+
+
+```{r}
+
+
+season_sites <- d234 %>%
+  filter(SiteID %in% site_sf$SiteID) %>%
+  mutate(year = year(date_unity),
+         month = month(date_unity)) %>%
+  group_by(lat,long,SiteID,type,year) %>%
+  summarize(dist_months = n_distinct(month)) %>%
+  filter(dist_months > 5)
+  
+
+
+
+month_nest <- d234 %>%
+  filter(SiteID %in% season_sites$SiteID) %>%
+  mutate(year = year(date_unity),
+         month = month(date_unity)) %>%
+  group_by(SiteID, lat, long, month) %>%
+  summarize(across(where(is.numeric),mean)) %>%
+  group_by(SiteID, lat, long) %>%
+  mutate(id = SiteID) %>%
+  nest()
+
+
+
+month_plotter <- function(df =  month_nest$data[[1]]){
+  ggtern(df, aes(tss_kd,doc_kd,chl_kd,color = month,
+                        size = secchi_pred)) + 
+    theme_bw() + 
+    theme_showarrows() + 
+    labs(x = 'TSS', 
+         y = 'DOC',
+         z = 'Alg') + 
+    geom_point() + 
+    scale_color_gradient2(low = 'green3',
+                          mid = 'gray20',
+                          high = 'purple3',
+                          midpoint = 6) + 
+    scale_size(range = c(0.5,3))
+}
+
+month_sf <- month_nest %>%
+  st_as_sf(.,coords = c('long','lat'), crs = 4326) %>%
+  ungroup()  %>%
+  mutate(month_plots = map(data, month_plotter)) 
+
+# mapviewOptions(fgb = F)
+# month_map <- mapview(month_sf,
+#                      popup = leafpop::popupGraph(month_sf$month_plots))
+# 
+# mapshot(month_map, url = 'month_long_terms.html')
+
+```
+
+
+## Type means
+
+
+```{r}
+month_site_means <- d234 %>%
+  mutate(month = month(date_unity),
+         year = year(date_unity),
+         season = cut(month,4)) %>%
+  group_by(lat, long, SiteID, season, type) %>%
+  summarize(across(where(is.numeric), mean))
+
+
+ggtern(month_site_means, aes(tss_kd,doc_kd,chl_kd,
+                        size = secchi_pred)) + 
+    theme_bw() + 
+    theme_showarrows() + 
+    labs(x = 'TSS', 
+         y = 'DOC',
+         z = 'Alg') + 
+    geom_point() + 
+    scale_color_gradient2(low = 'green3',
+                          mid = 'gray20',
+                          high = 'purple3',
+                          midpoint = 6) + 
+    scale_size(range = c(0.5,3)) + 
+  facet_grid(season ~ type)
+
+
+
+```
+
+
+
+# MC/JJ Questions
+
+- Exemplars for seasonal/long-term/temporal to show off ideas 
+
+- Here's everything mapped over where we have tss/chl_a/doc and clustered?
+
+- When making results drop secchi requirement and model secchi. 
+
+- Huc membership
+
+- Screening for long-term data at least 1/2 per year for > 20 years
+
+- intra-annual at least 5 months per year. 
+
+## Spatial Variation
+
+
+```{r}
+
+
+fox_ids <- tibble(SiteID = c('USGS-04084422','USGS-04084445','USGS-04084475','USGS-04085054',
+             'USGS-04085059', 'USGS-04085139'),
+             order = c(6,5,4,3,2,1))
+
+
+
+fox_r <- d234  %>%
+  inner_join(fox_ids) %>%
+  mutate(date = as.Date(date_unity)) 
+
+
+fox_r_map <- fox_r %>%
+  distinct(SiteID, .keep_all = T) %>%
+  st_as_sf(.,coords = c('long','lat'),crs = 4326)
+
+mapview(fox_r_map)
+
+summary(fox_r)
+cool_dates <- fox_r %>%
+  group_by(date) %>%
+  count() %>%
+  arrange(-n) %>%
+  ungroup() %>%
+  slice(1:5) %>%
+  arrange(date)
+
+
+
+fox_days <- fox_r %>%
+  dplyr::filter(date %in% cool_dates$date) 
+
+
+
+
+ggtern(fox_days,aes(tss_kd,chl_kd,doc_kd, color = order)) + 
+  geom_point() + 
+  facet_wrap(~date,ncol=3) + 
+  theme_bw() + 
+  theme_showarrows() + 
+  labs(x = 'TSS', 
+       y = 'DOC',
+       z = 'Alg') + 
+  geom_point() + 
+  geom_line() +
+  scale_color_gradient(low = 'skyblue',high = 'blue3') + 
+  theme(legend.position = c(0.8,0.2))
+
+
+```
+
+
+### Additions
+
+- Geographic Coverage
+
+- Plausible space (not deep clarity and high chl-a)
+
+- Switch model application to wherever we have all data.
+
+  - Requires a reasonable R2 to predict KD. Highly skewed in 
+  the data
+  
+  - R2 round the corner. 
+
+
+

@@ -1,3 +1,8 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
 
 
 
@@ -85,6 +90,8 @@ of ranges.
 
 in_vis <- read_feather('data/out/simul.feather')
 
+no_sech <- read_feather('data/out/no_secchi.feather')
+
 range <- c(50, 100, 200, 234)
 
 
@@ -92,7 +99,7 @@ range <- c(50, 100, 200, 234)
 #Couldn't think of a more clever way to multiply
 #chl_a by the range of values, so just made
 # dataframe 4 times bigger with new column called ratio. 
-nap_test <- expand_grid(in_vis,chl_ratio = range) %>%
+nap_test <- expand_grid(no_sech,chl_ratio = range) %>%
   mutate(power = ifelse(chl_ratio == 234, 0.57, 1),
          chl_a_biomass = exp(log(chl_ratio/1000)+log(chl_a)*power),
          tss_dead = tss-chl_a_biomass)
@@ -198,8 +205,10 @@ to play nice with our simultaneous observation data.
 #get WQP methods for post-hoc investigation of errors
 
 
-simul_methods <-  data.table::fread('data/in/aq_situ/in-situ/wqp_long_with_methods.csv') %>%
+simul_methods <-  read_csv('data/in/aq_situ/in-situ/wqp_long_with_methods.csv') %>%
   dplyr::filter(SiteID %in% in_vis$SiteID)
+
+length(is.na(simul_methods$characteristicName))
 
 simul_methods_time_fix <- simul_methods %>%
   mutate(time = as.character(format(date_time, '%H:%M:%S')), 
@@ -253,28 +262,45 @@ Model assumptions
 
 
 
-```{r, warning = F, cache = T, fig.cap = 'modelled light extinction coefficient versus observed, red line is 1:1 line and blue is line of best fit, RMSE hardly varies between chl-a conversion approaches.'}
+```{r, warning = F, cache = T, fig.cap = 'modelled light extinction coefficient versus observed, red line is 1:1 line and blue is line of best fit, R2 hardly varies between chl-a conversion approaches.'}
 
 
-nap_est <- nap_test %>%
-  filter(tss_dead > 0.001) %>%
-  mutate(secchi = ifelse(secchi < 0.01,0.01,secchi),
-        kd = (1/(secchi))) 
+nap_est_no_secchi <- nap_test %>%
+  ungroup() %>%
+  filter(tss_dead > 0.01,
+         secchi < 15 | is.na(secchi)) %>%
+  mutate(secchi = ifelse(secchi < 0.1,0.1,secchi),
+        kd = (1/(secchi)))
+
+
+
+write_feather(nap_est_no_secchi %>%
+                filter(chl_ratio == 234),'data/out/no_secchi_clean.feather')
+
+
+
+nap_est <- nap_est_no_secchi %>%
+  filter(!is.na(secchi))
+
+
 
 
 k_w <- 1/1.5/max(nap_est$secchi)
 
 
 kd_mod <- function(df){
-  mod <- lm((kd-k_w)  ~ 0 +tss_dead + doc + chl_a, data = df)
+  mod <- lm((kd-k_w)  ~ 0 + tss_dead + doc + chl_a, data = df)
 }
 
 
 kd_resid_extract <- function(df,mod){
   df <- df %>%
     mutate(residuals = mod$residuals,
-           pred = mod$fitted.values)
+           pred = mod$fitted.values + k_w)
 }
+
+# nap_est <- nap_est %>%
+#   filter(SiteID %in% fine_sites$SiteID) 
 
 
 nap_mods <- group_by(nap_est,chl_ratio) %>%
@@ -282,31 +308,40 @@ nap_mods <- group_by(nap_est,chl_ratio) %>%
   mutate(mods = map(data,kd_mod),
          data = map2(data, mods, kd_resid_extract))
 
+mod234 <- nap_mods %>%
+  dplyr::filter(chl_ratio == 234)
+
+
 
 nap_resid <- nap_mods %>%
   dplyr::select(-mods) %>%
   unnest(data) %>%
-  mutate(ratio_rmse = paste('ratio =',chl_ratio,', RMSE =', round(rmse(kd,pred),3)))
-
+  mutate(ratio_rmse = paste('ratio =',chl_ratio,', R2 =', round(cor(pred,kd)^2,2)),
+         year = year(date_unity))
 
 
 nap_resid %>%
-  sample_frac(0.1) %>%
-  ggplot(., aes(kd,pred)) + 
+  sample_frac(0.2) %>%
+  ggplot(., aes(kd,pred, color = year(date_unity))) + 
   geom_point(shape = 1) + 
   facet_wrap(~ratio_rmse) + 
   ggthemes::theme_few() + 
-  xlab('kd (1.4/secchi)') +
+  xlab('kd (1/secchi)') +
   ylab('predicted kd') +
   scale_x_log10() + 
   scale_y_log10() +
-  stat_smooth(method = 'lm',se = F) +
+  scale_color_viridis_c() + 
+  stat_smooth(method = 'lm',se = F, color = 'black') +
   geom_abline(intercept = 0, slope = 1, col = 'red') 
 
 
 
 
+
 ```
+
+
+
 
 
 ### Variation in slopes w/ different chl biomass ratios
@@ -329,10 +364,31 @@ nap_slopes <- nap_mods %>%
   pivot_wider(names_from = 'term', values_from = 'estimate')
 
 
-knitr::kable(nap_slopes)
 
+knitr::kable(nap_slopes) %>%
+  kable_paper() %>%
+  scroll_box(width = '100%', height = '600px') %>%
+  kable_styling(bootstrap_options = 'striped', full_width = )
 ```
 
+
+
+
+# Data prep and model refinement
+
+In the data QA/QC step we tried various ways to make some wise choices about what 
+data to include in this analysis. Unfortunately, with data, coming from such disparate sources
+we could make no series of wise choices on what data to keep and what to remove without
+the choices, ultimately being arbitrary. We additionally explored how the chl-a to biomass
+ratio conversion impacted the outcome of our models, concluding that the variable
+ratio of 234^0.5 was a fine choice with little impact to modeled slopes. 
+
+So what additional refinement do we need. Well we would like to explore a few things:
+
+  1. How much can models be improved by restricting to the most strict method collection types? 
+ 
+  2. How stable are the coefficients for each parameter across water body types,
+  geography, and when random subsets are taken? 
 
 ## Exploring Data and Model Results for Systematic Problems 
 
@@ -344,11 +400,13 @@ knitr::kable(nap_slopes)
 simul_vis_methods <- feather::read_feather('data/out/simul_methods.feather')
 
 
-methods_summarizer <- function(param = 'chl_a'){
+
+methods_summarizer <- function(param = 'tss'){
   
   methods <- simul_vis_methods %>%
-    filter(harmonized_parameter == param) %>%
+    filter(harmonized_parameter == param) 
     inner_join(nap_resid %>%
+                 ungroup() %>%
                  filter(chl_ratio == 234) %>%
                  select(SiteID,date_unity,residuals,pred,kd)) 
 
@@ -374,8 +432,9 @@ methods_summarizer <- function(param = 'chl_a'){
               resid_cv = sd(residuals)/mean(residuals),
               n = n(),
               resid_se = sd(residuals)/(n^0.5),
-              mdae = mdae(kd,pred)) %>%
-    arrange(-n) %>%
+              mdae = mdae(kd,pred),
+              impact = (n*rmse)/nrow(.)) %>%
+    arrange(-impact)  %>%
     mutate(across(where(is.numeric), ~(round(.x, 2))),
            param = param)
   
@@ -385,8 +444,9 @@ methods_summarizer <- function(param = 'chl_a'){
               resid_cv = sd(residuals)/mean(residuals),
               n = n(),
               resid_se = sd(residuals)/(n^0.5),
-              mdae = mdae(kd,pred)) %>%
-    arrange(-n) %>%
+              mdae = mdae(kd,pred),
+              impact = (n*rmse)/nrow(.)) %>%
+    arrange(-impact) %>%
     mutate(across(where(is.numeric), ~(round(.x, 2))),
            param = param)
   
@@ -407,7 +467,7 @@ methods_summarizer <- function(param = 'chl_a'){
   
   
   
-  return(list(method_error,name_error,method_plot,name_plot))
+  return(list(method_error,name_error,method_plot,name_plot,methods))
   
 }
 
@@ -418,6 +478,7 @@ secchi_errors <- methods_summarizer('secchi')
 
 method_errors <- rbind(chl_errors[[1]],doc_errors[[1]],
                     tss_errors[[1]],secchi_errors[[1]])
+
 
 
 knitr::kable(method_errors) %>%
@@ -442,13 +503,128 @@ knitr::kable(name_errors) %>%
 ```
 
 
-### Methods predicting errors
+### Do methods predict residuals?
+
+
+#### Chl-a methods
+
+
+- No. 
 
 ```{r}
 
+library(rpart)
+library(rpart.plot)
+chl_methods <- chl_errors[[5]]
+
+tss_methods <- tss_errors[[5]]
+
+doc_methods <- doc_errors[[5]]
+
+secchi_methods <- secchi_errors[[5]]
+
+# write_csv(chl_methods, 'data/out/chl_methods.csv')
+# write_csv(tss_methods, 'data/out/tss_methods.csv')
+# write_csv(doc_methods, 'data/out/doc_methods.csv')
+# write_csv(secchi_methods, 'data/out/secchi_methods.csv')
+# 
+
+
+
+
+chl_vars <- chl_methods %>%
+  dplyr::select(residuals,lat, long,characteristicName, kd, analytical_method) %>%
+  dplyr::filter(!is.na(residuals),!is.na(lat),!is.na(long)) %>%
+  mutate(across(characteristicName:analytical_method,
+                ~ifelse(is.na(.),'unknown',.))) %>%
+  mutate(residuals_bin = cut(abs(residuals/kd),
+                             breaks = quantile(abs(residuals/kd),c(0,0.95,0.99,1)))) %>%
+  na.omit(.)
+
+
+
+
+
+# chl_rando <- randomForest(residuals ~ ., data = chl_vars,
+#                           ntree = 500,
+#                           importance = T,
+#                           nPerm = 20)
+# 
+
+
+cart_mod <- rpart(residuals_bin ~ ., data = chl_vars %>% 
+                    dplyr::select(-residuals,-kd),
+                  cp = 0.01) # CP is a tuning knob for tree complexity. 
+cart_mod
+
+rpart.plot(cart_mod, type = 2, clip.right.labs = F,
+           branch = 0.3)
 
 
 ```
 
+
+# Model variations
+
+
+## Subsetting only the most common methods
+
+Which, unfortunately, includes a ton of methods labeled = NA. 
+
+
+```{r}
+
+
+nap_234 <- nap_est %>%
+  filter(chl_ratio == 234) %>%
+  mutate(methods = 'all')
+
+
+strict_methods <- simul_vis_methods %>%
+    filter(harmonized_parameter == 'tss' & is.na(analytical_method) & is.na(characteristicName))
+    filter(characteristicName %in% c('Chlorophyll a','Chlorophyll a, corrected for pheophytin',
+                                     'Organic carbon', 'Depth, Secchi disk depth'),
+           analytical_method %in% c('MONOCHROMATIC; SPECTROPHOTOMETRIC','10200 H ~ Chlorophyll a-b-c Determination','Total Organic Carbon by Combustion','5310 B ~ Total Organic Carbon by Combustion-Infrared Method',
+                                    'UV OR HEATED PERSULFATE OXIDATION','WET OXIDATION METHOD')) 
+  filter(harmonized_parameter == 'tss' & analytical_method == NA & characteristicName == NA) %>%
+  select(date_unity,SiteID) %>%
+  distinct(.) %>%
+  inner_join(nap_234) %>%
+  mutate(methods = 'strict')
+
+
+
+
+strict_v_loose <- bind_rows(strict_methods,nap_234) %>%
+  group_by(methods) %>%
+  nest() %>%
+  mutate(mods = map(data,kd_mod),
+         data = map2(data, mods, kd_resid_extract))
+
+
+
+method_resid <- strict_v_loose %>%
+  dplyr::select(-mods) %>%
+  unnest(data) %>%
+  mutate(ratio_rmse = paste('methods =',methods,', R2 =', round(cor(pred,kd)^2,2)),
+         year = year(date_unity))
+
+
+method_resid %>%
+  sample_frac(0.2) %>%
+  ggplot(., aes(kd,pred, color = year(date_unity))) + 
+  geom_point(shape = 1) + 
+  facet_wrap(~ratio_rmse) + 
+  ggthemes::theme_few() + 
+  xlab('kd (1/secchi)') +
+  ylab('predicted kd') +
+  scale_x_log10() + 
+  scale_y_log10() +
+  scale_color_viridis_c() + 
+  stat_smooth(method = 'lm',se = F, color = 'black') +
+  geom_abline(intercept = 0, slope = 1, col = 'red') 
+
+
+```
 
 

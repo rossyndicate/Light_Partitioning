@@ -1,3 +1,8 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
 
 
 # (PART) Data downloads and decisions {-}
@@ -84,7 +89,23 @@ site.vis <- read_feather('data/in/unq_site.feather') %>%
 
 # Complete in-situ data, 6.5 million records. 
 in.vis <- read_csv('data/in/aq_situ/in-situ/wqp_lagos_unity.csv') 
-    
+
+# Get clouds and path row sites
+
+clouds <- read_feather('data/in/clouds.feather') %>%
+  mutate(date = as.Date(SENSING_TIME)) %>%
+  select(PATH = WRS_PATH, 
+         ROW = WRS_ROW,
+         clouds = CLOUD_COVER,
+         date)
+
+
+site_path_row <- site.vis %>%
+  st_as_sf(.,coords = c('long','lat'), crs = 4326) %>%
+  st_join(.,st_read('data/in/wrs/WRS2_descending.shp')) %>%
+  select(SiteID, PATH, ROW) %>%
+  as_tibble(.) %>%
+  select(-geometry)
 
 ```
 
@@ -100,7 +121,7 @@ I think the code mostly speaks for itself here
 
 simul_vis <- in.vis %>%
   select(-p_sand) %>%
-  filter(across(c(chl_a,doc,secchi,tss), ~!is.na(.))) %>%
+  filter(if_all(c(chl_a,doc,tss,secchi), ~!is.na(.))) %>% 
   inner_join(site.vis) %>%
   filter(type != 'Facility') %>%
   #Set some reasonable thresholds, AquaSat is too generous
@@ -109,10 +130,25 @@ simul_vis <- in.vis %>%
          tss < 1000, ## mg/L
          doc < 50)
 
+no_secchi <- in.vis %>%
+  select(-p_sand) %>%
+  filter(across(c(chl_a,doc,tss), ~!is.na(.))) %>% 
+  inner_join(site.vis) %>%
+  filter(type != 'Facility') %>%
+  #Set some reasonable thresholds, AquaSat is too generous
+  filter(
+         chl_a < 1000,## ug/L
+         tss < 1000, ## mg/L
+         doc < 50)
+
 # For speed
 write_feather(simul_vis, 'data/out/simul.feather')
 #For reproducibility
 write_csv(simul_vis, 'data/out/simul.csv')
+
+#For speed
+write_feather(no_secchi, 'data/out/no_secchi.feather')
+
 
 
 ```
