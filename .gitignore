@@ -3,3 +3,5 @@
 .RData
 .Ruserdata
 data/
+**/.DS_Store
+_targets/
