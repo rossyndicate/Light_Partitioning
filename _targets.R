@@ -10,7 +10,7 @@ tar_option_set(
 )
 
 # Run the R scripts in the R/ folder with your custom functions:
-tar_source()
+tar_source(files = "src/functions.R")
 
 # Replace the target list below with your own:
 list(
@@ -85,6 +85,10 @@ list(
                   grep(pattern = "shp$", value = TRUE),
                 st_read(dsn = !!.x),
                 packages = "sf"),
+  
+  tar_file_read(simul_methods,
+                "data/in/aq_situ/in-situ/wqp_long_with_methods.csv",
+                read_csv(!!.x)),
   
   
   
@@ -167,7 +171,72 @@ list(
                  scale_color_manual(values = c('seagreen3','skyblue3','saddlebrown'))
              },
              packages = c("tidyverse", "GGally", "ggthemes")
-  )
+  ),
+  
+  tar_target(nap_test,
+             {
+               range <- c(50, 100, 200, 234)
+               
+               # Couldn't think of a more clever way to multiply
+               # chl_a by the range of values, so just made
+               # dataframe 4 times bigger with new column called ratio. 
+               nap_test <- expand_grid(no_secchi, chl_ratio = range) %>%
+                 mutate(power = ifelse(chl_ratio == 234, 0.57, 1),
+                        chl_a_biomass = exp(log(chl_ratio / 1000) + log(chl_a) * power),
+                        tss_dead = tss - chl_a_biomass)
+             },
+             packages = c("tidyverse", "ggpmisc")),
+  
+  tar_target(negative_tss_dead,
+             nap_test %>%
+               mutate(negative = ifelse(tss_dead < 0, 'negative', 'positive')) %>%
+               group_by(negative,chl_ratio) %>%
+               count() %>%
+               pivot_wider(names_from = 'negative', values_from = 'n')  %>%
+               mutate(percent_neg = negative / (positive + negative) * 100)),
+  
+  tar_target(chla_tss_dead_plot,
+             
+             #Subset for plotting purposes
+             nap_test %>%
+               # Remove negatives and very small numbers (ug/L of sediment is 
+               # basically zero)
+               filter(tss_dead > 0.001) %>%
+               sample_frac(0.1) %>%
+               ggplot(., aes(chl_a,tss_dead,color = type)) +
+               facet_wrap(~chl_ratio) + 
+               geom_point() + 
+               scale_x_log10() + 
+               scale_y_log10() + 
+               stat_poly_eq() + 
+               ggthemes::theme_few() + 
+               scale_color_manual(values = c('seagreen3','skyblue3','saddlebrown'))),
+  
+  tar_target(simul_vis_methods,
+             join_simul_data_w_methods(simul_methods = simul_methods,
+                                       in_vis = in_vis),
+             packages = c("tidyverse", "lubridate"))
   
   
 )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
