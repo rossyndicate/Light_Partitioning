@@ -154,7 +154,7 @@ list(
   tar_target(log_simul_vis,
              {
                log_simul <- simul %>%
-                 dplyr::mutate(across(c(secchi,chl_a,tss,doc,tis),
+                 dplyr::mutate(across(c(secchi, chl_a, tss, doc, tis),
                                       log10)) %>%
                  dplyr::filter(across(c(chl_a,doc,secchi,tss),
                                       ~!is.na(.) & . < Inf & . > -Inf)) 
@@ -215,7 +215,62 @@ list(
   tar_target(simul_vis_methods,
              join_simul_data_w_methods(simul_methods = simul_methods,
                                        in_vis = in_vis),
-             packages = c("tidyverse", "lubridate"))
+             packages = c("tidyverse", "lubridate")),
+  
+  tar_target(light_atten_model,
+             explore_atten_model(nap_test = nap_test),
+             packages = c("tidyverse", "lubridate", "broom")),
+  
+  tar_file(no_secchi_clean,
+           {
+             out_path <- 'data/out/no_secchi_clean.feather'
+             
+             write_feather(x = light_atten_model$no_secchi_clean,
+                           path = out_path)
+             
+             return(out_path)
+           },
+           packages = c("tidyverse", "feather")),
+  
+  tar_target(method_name_error,
+             characterize_error(nap_resid = light_atten_model$nap_resid,
+                                simul_vis_methods = simul_vis_methods),
+             packages = c("tidyverse", "Metrics")),
+  
+  
+  # Tree models -------------------------------------------------------------
+  # These could be simplified into a reusable function
+  
+  tar_target(chl_rpart,
+             fit_rpart_chl(chl_methods = method_name_error$methods[[1]],
+                           site = site),
+             packages = c("tidyverse", "rpart", "rpart.plot")),
+  
+  tar_target(doc_rpart,
+             fit_rpart_doc(doc_methods = method_name_error$methods[[2]],
+                           site = site),
+             packages = c("tidyverse", "rpart", "rpart.plot")),
+  
+  # This one runs very long. Has roughly double the analytical method count
+  # vs the other parameters. Is this the reason?
+  # tar_target(tss_rpart,
+  #            fit_rpart_tss(tss_methods = method_name_error$methods[[3]],
+  #                          site = site),
+  #            packages = c("tidyverse", "rpart", "rpart.plot")),
+  
+  tar_target(secchi_rpart,
+             fit_rpart_secchi(secchi_methods = method_name_error$methods[[4]],
+                              site = site),
+             packages = c("tidyverse", "rpart", "rpart.plot")),
+  
+  
+  # Additional modeling -----------------------------------------------------
+  
+  # Compare strict vs. loose methods inclusions for modeling
+  tar_target(mods_strict_v_loose,
+             compare_model_variations(nap_est = light_atten_model$no_secchi_clean %>%
+                                        filter(!is.na(secchi)),
+                                      simul_vis_methods = simul_vis_methods))  
   
   
 )
