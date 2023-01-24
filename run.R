@@ -1,4 +1,4 @@
-# This is a helper script to run the pipeline.
+#!/usr/bin/env Rscript
 
 library(targets)
 
