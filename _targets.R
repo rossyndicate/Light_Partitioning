@@ -9,7 +9,6 @@ tar_option_set(
   packages = c("tidyverse")
 )
 
-
 # Run the R scripts with custom functions:
 tar_source(files = c(
   "1_inventory.R",
