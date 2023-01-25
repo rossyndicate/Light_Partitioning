@@ -8,6 +8,7 @@ source("3_harmonize/src/get_p_codes.R")
 source("3_harmonize/src/harmonization_report_helper_functions.R")
 source("3_harmonize/src/harmonize_sdd.R")
 source("3_harmonize/src/harmonize_tss.R")
+source("3_harmonize/src/harmonize_chla.R")
 source("3_harmonize/src/remove_duplicates.R")
 
 
@@ -80,6 +81,11 @@ p3_targets_list <- list(
                 command = "data/in/sdd_collection_equipment_matchup.csv",
                 read = read_csv(file = !!.x)),
   
+  # Chla depth method matchup table
+  tar_file_read(name = chla_analytical_method_matchup,
+                command = "data/in/chla_analytical_method_matchup.csv",
+                read = read_csv(file = !!.x)),
+  
   
   # Harmonization process ---------------------------------------------------
   
@@ -89,6 +95,14 @@ p3_targets_list <- list(
                            p_codes = p_codes,
                            match_table = wqp_col_match),
              packages = c("tidyverse", "lubridate", "pander")),
+  
+  tar_target(harmonized_chla,
+             harmonize_chla(raw_chla = wqp_data_aoi_formatted_filtered %>%
+                             filter(parameter == "chla"),
+                           p_codes = p_codes,
+                           match_table = wqp_col_match,
+                           chla_analytical_method_matchup = chla_analytical_method_matchup),
+             packages = c("tidyverse", "lubridate")),
   
   tar_target(harmonized_sdd,
              harmonize_sdd(raw_sdd = wqp_data_aoi_formatted_filtered %>%
