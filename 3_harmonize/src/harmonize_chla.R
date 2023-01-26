@@ -244,6 +244,13 @@ harmonize_chla <- function(raw_chla, p_codes, match_table, chla_analytical_metho
            harmonized_value = value_numeric * conversion,
            harmonized_unit = "ug/L")
   
+  # Export in memory-friendly way
+  out_path <- "3_harmonize/out/harmonized_chla.feather"
+  
+  write_feather(converted_units_chla,
+                out_path)
+  
+  
   return(
     list(
       chla_analytical_method_groups_plot = "figs/chla_analytical_method_groups_plot.png",
@@ -252,7 +259,8 @@ harmonize_chla <- function(raw_chla, p_codes, match_table, chla_analytical_metho
       fraction_counts = fraction_counts,
       sample_counts = sample_counts,
       unit_counts = unit_counts,
-      equipment_counts = equipment_counts
+      equipment_counts = equipment_counts,
+      harmonized_chla_out = out_path
     )
   )
   

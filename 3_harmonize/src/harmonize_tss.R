@@ -119,13 +119,19 @@ harmonize_tss <- function(raw_tss, p_codes, match_table){
     filter(!is.na(ssc)) %>%
     summary(.)
   
+  # Export in memory-friendly way
+  out_path <- "3_harmonize/out/harmonized_tss.feather"
+  
+  write_feather(tss_tis_harmonized,
+                out_path)
+  
   return(
     list(
       tss_depth_hist = tss_depth_hist,
       tss_perc_summary = tss_perc_summary,
-      raw_tss = raw_tss,
       tss_lookup = tss_lookup,
-      ssc_tss_summary = ssc_tss_summary
+      ssc_tss_summary = ssc_tss_summary,
+      harmonized_tss_out = out_path
     )
   )
   
