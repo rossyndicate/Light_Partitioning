@@ -94,15 +94,15 @@ p3_targets_list <- list(
                              filter(parameter == "tss"),
                            p_codes = p_codes,
                            match_table = wqp_col_match),
-             packages = c("tidyverse", "lubridate", "pander")),
+             packages = c("tidyverse", "lubridate", "pander", "feather")),
   
   tar_target(harmonized_chla,
              harmonize_chla(raw_chla = wqp_data_aoi_formatted_filtered %>%
-                             filter(parameter == "chla"),
+                             filter(parameter == "chlorophyll"),
                            p_codes = p_codes,
                            match_table = wqp_col_match,
                            chla_analytical_method_matchup = chla_analytical_method_matchup),
-             packages = c("tidyverse", "lubridate")),
+             packages = c("tidyverse", "lubridate", "feather")),
   
   tar_target(harmonized_sdd,
              harmonize_sdd(raw_sdd = wqp_data_aoi_formatted_filtered %>%
@@ -113,7 +113,7 @@ p3_targets_list <- list(
                            sdd_analytical_method_matchup = sdd_analytical_method_matchup,
                            sdd_sample_method_matchup = sdd_sample_method_matchup,
                            sdd_equipment_matchup = sdd_equipment_matchup),
-             packages = c("tidyverse", "lubridate"))#,
+             packages = c("tidyverse", "lubridate", "feather"))#,
   
   # tar_target(harmonized_chla),
   # 

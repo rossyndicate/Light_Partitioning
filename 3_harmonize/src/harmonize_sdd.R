@@ -251,6 +251,12 @@ harmonize_sdd <- function(raw_sdd, p_codes, match_table,
          plot = sdd_unit_dist_plot,
          device = "png", width = 9.5, height = 4, units = "in")
   
+  # Export in memory-friendly way
+  out_path <- "3_harmonize/out/harmonized_sdd.feather"
+  
+  write_feather(group_units_sdd,
+                out_path)
+  
   return(
     list(
       sdd_analytical_method_groups_plot = "figs/sdd_analytical_method_groups_plot.png",
@@ -262,7 +268,8 @@ harmonize_sdd <- function(raw_sdd, p_codes, match_table,
       fraction_counts = fraction_counts,
       sample_counts = sample_counts,
       unit_counts = unit_counts,
-      equipment_counts = equipment_counts
+      equipment_counts = equipment_counts,
+      harmonized_sdd_out = out_path
     )
   )
 }
