@@ -115,8 +115,6 @@ p3_targets_list <- list(
                            sdd_equipment_matchup = sdd_equipment_matchup),
              packages = c("tidyverse", "lubridate", "feather"))#,
   
-  # tar_target(harmonized_chla),
-  # 
   # tar_target(harmonized_doc)
 
   )
