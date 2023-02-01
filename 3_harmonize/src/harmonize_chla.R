@@ -1,7 +1,6 @@
 
 harmonize_chla <- function(raw_chla, p_codes, match_table, chla_analytical_method_matchup){
   
-  
   # First step is to read in the data and do basic formatting and filtering
   raw_chla <- raw_chla %>%
     rename_with(~ match_table$short_name[which(match_table$wqp_name == .x)],
@@ -144,23 +143,6 @@ harmonize_chla <- function(raw_chla, p_codes, match_table, chla_analytical_metho
     )
   )
   
-  chla_fixed_unit_values_plot <- converted_units_chla %>%
-    ggplot() + 
-    geom_histogram(aes(value_numeric + 0.00001),
-                   color = "black", fill = "white") +
-    scale_x_log10() +
-    ylab("Record count") +
-    xlab("log10(chla value + 0.00001)") +
-    ggtitle("Chlorophyll value spread after harmonizing units") +
-    theme_bw()
-  
-  chla_fixed_unit_vals_out_path <- "figs/chla_fixed_unit_values_plot.png"
-  
-  # Export as file instead of RDS to save memory
-  ggsave(filename = chla_fixed_unit_vals_out_path,
-         plot = chla_fixed_unit_values_plot,
-         device = "png", width = 7.5, height = 4.5, units = "in")
-  
   # As with value col, check for entries with potential salvageable data. But don't
   # create a flag column for this one
   salvage_depths <- raw_chla %>%
@@ -225,26 +207,6 @@ harmonize_chla <- function(raw_chla, p_codes, match_table, chla_analytical_metho
     )
   )
   
-  # Plot methods grouping counts
-  chla_analytical_method_groups_plot <- grouped_analytical_methods_chla %>%
-    count(analytical_method_grouping) %>%
-    ggplot() +
-    geom_bar(aes(x = analytical_method_grouping, y = n),
-             fill = "white",
-             color = "black",
-             stat = "identity") +
-    ylab("Record count") +
-    xlab("Analytical method group") +
-    ggtitle("Chlorophyll counts aggregated by analytical method flag") +
-    theme_bw()
-  
-  chla_analytical_methods_out_path <- "figs/chla_analytical_method_groups_plot.png"
-  
-  # Export as file instead of RDS to save memory
-  ggsave(filename = chla_analytical_methods_out_path,
-         plot = chla_analytical_method_groups_plot,
-         device = "png", width = 7.5, height = 4.5, units = "in")
-  
   # Now count the fraction column
   fraction_counts <- raw_chla %>%
     count(fraction) %>%
@@ -259,7 +221,7 @@ harmonize_chla <- function(raw_chla, p_codes, match_table, chla_analytical_metho
       false = "Makes sense")) %>%
     filter(aquasat_fraction == "Makes sense")
   
-  # How many records removed due to limits on analytical method?
+  # How many records removed due to unlikely fraction types?
   print(
     paste0(
       "Rows removed due to unlikely fraction type: ",
@@ -267,7 +229,7 @@ harmonize_chla <- function(raw_chla, p_codes, match_table, chla_analytical_metho
     )
   )
   
-  # Get an idea of how many analytical methods exist:
+  # Get an idea of how many sample methods exist:
   print(
     paste0(
       "Number of chla sample methods present in raw dataset: ",
@@ -276,7 +238,7 @@ harmonize_chla <- function(raw_chla, p_codes, match_table, chla_analytical_metho
     )
   )
   
-  # Get an idea of how many analytical methods exist:
+  # Get an idea of how many equipment types exist:
   print(
     paste0(
       "Number of chla equipment types present in raw dataset: ",
@@ -291,17 +253,14 @@ harmonize_chla <- function(raw_chla, p_codes, match_table, chla_analytical_metho
   write_feather(grouped_fractions_chla,
                 data_out_path)
   
-  
-  return(
-    list(
-      harmonized_chla_feather = data_out_path,
-      chla_fixed_unit_vals_plot = chla_fixed_unit_vals_out_path,
-      chla_analytical_methods_plot = chla_analytical_methods_out_path,
-      unit_counts = unit_counts,
-      salvage_depths = salvage_depths,
-      salvage_depth_units = salvage_depth_units,
-      fraction_counts = fraction_counts
+  # Final dataset length:
+  print(
+    paste0(
+      "Final number of records: ",
+      nrow(grouped_fractions_chla)
     )
   )
+  
+  return(data_out_path)
   
 }
