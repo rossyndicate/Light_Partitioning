@@ -251,6 +251,9 @@ harmonize_tss <- function(raw_tss, p_codes, match_table){
     # on the original light-partitioning workflow (update from aquasatv1)
     filter(harmonized_value >= 0 & harmonized_value <= 1000) 
   
+  
+  # Investigate depth -------------------------------------------------------
+  
   # Define a depth lookup table to convert all depth data to meters. 
   depth_conversion_table <- tibble(sample_depth_unit = c('cm', 'feet', 'ft', 'in',
                                                          'm', 'meters'),
@@ -265,9 +268,6 @@ harmonize_tss <- function(raw_tss, p_codes, match_table){
     # taken directly at the surface
     mutate(harmonized_depth = abs(as.numeric(sample_depth) * depth_conversion) + .01)
   
-  
-  # Investigate depth -------------------------------------------------------
-  
   # We lose lots of data by keeping only data with depth measurements
   print(
     paste(
@@ -275,8 +275,13 @@ harmonize_tss <- function(raw_tss, p_codes, match_table){
       round((nrow(tss_harmonized_units) - nrow(tss_harmonized_depth)) / nrow(tss_harmonized_units) * 100, 1),
       '% of samples'))
   
-  rm(tss_depth)
+  rm(tss_harmonized_depth)
   gc()
+  
+  
+  # Aggregate analytical methods --------------------------------------------
+  
+  # Analytical method aggregation
   
   # Get an idea of how many analytical methods exist:
   print(
@@ -285,11 +290,6 @@ harmonize_tss <- function(raw_tss, p_codes, match_table){
       length(unique(tss_harmonized_units$analytical_method))
     )
   )
-  
-  
-  # Aggregate analytical methods --------------------------------------------
-  
-  # Analytical method aggregation
   
   # Group together TSS methods into useful categories
   tss_aggregated_methods <- tss_harmonized_units %>%
