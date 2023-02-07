@@ -69,22 +69,26 @@ p3_targets_list <- list(
   # Secchi depth method matchup table
   tar_file_read(name = sdd_analytical_method_matchup,
                 command = "data/in/sdd_analytical_method_matchup.csv",
-                read = read_csv(file = !!.x)),
+                read = read_csv(file = !!.x),
+                cue = tar_cue("always")),
   
   # Secchi sample method matchup table
   tar_file_read(name = sdd_sample_method_matchup,
                 command = "data/in/sdd_sample_method_matchup.csv",
-                read = read_csv(file = !!.x)),
+                read = read_csv(file = !!.x),
+                cue = tar_cue("always")),
   
   # Secchi equipment matchup table
   tar_file_read(name = sdd_equipment_matchup,
                 command = "data/in/sdd_collection_equipment_matchup.csv",
-                read = read_csv(file = !!.x)),
+                read = read_csv(file = !!.x),
+                cue = tar_cue("always")),
   
   # Chla depth method matchup table
   tar_file_read(name = chla_analytical_method_matchup,
                 command = "data/in/chla_analytical_method_matchup.csv",
-                read = read_csv(file = !!.x)),
+                read = read_csv(file = !!.x),
+                cue = tar_cue("always")),
   
   
   # Harmonization process ---------------------------------------------------

@@ -10,7 +10,6 @@ harmonize_chla <- function(raw_chla, p_codes, match_table, chla_analytical_metho
     mutate(year = year(date),
            units = trimws(units)) %>%
     filter(
-      # year >= 1984,
       media %in% c("Water", "water"),
       type %in% c("Surface Water", "Water", "Estuary", "Ocean Water",
                   "Mixing Zone") | is.na(type)) %>%
@@ -76,8 +75,8 @@ harmonize_chla <- function(raw_chla, p_codes, match_table, chla_analytical_metho
             "improper", "warm", "violation", "invalid", "unable", "no test",
             "cancelled", "instrument down", "no result", "time exceed",
             "not accept", "QC EXCEEDED", "not ice", "ice melt",
-            "PAST HOLDING TIME", "not done", "no reading", "no secchi",
-            "not reported", "no data"),
+            "PAST HOLDING TIME", "not done", "no reading", "not reported",
+            "no data"),
           collapse = "|"),
         x = value,
         ignore.case = T

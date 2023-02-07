@@ -13,10 +13,8 @@ harmonize_sdd <- function(raw_sdd, p_codes, match_table,
     mutate(year = year(date),
            units = trimws(units)) %>%
     filter(
-      # year >= 1984,
       media %in% c("Water", "water"),
-      type %in% c("Surface Water", "Water", "Estuary", "Ocean Water",
-                  "Mixing Zone") | is.na(type)) %>%
+      type %in% c("Surface Water", "Water", "Estuary") | is.na(type)) %>%
     # Add an index to control for cases where there's not enough identifying info
     # to track a unique record
     rowid_to_column(., "index")
@@ -102,7 +100,7 @@ harmonize_sdd <- function(raw_sdd, p_codes, match_table,
     mutate(value_text_flag = if_else(
       condition = grepl(x = value,
                         # Adapted from https://stackoverflow.com/a/31761609
-                        pattern = "^(?=.*?\\d)(?=.*?[a-zA-Z'\"<>])[a-zA-Z\\d \\.'\"<>]+$",
+                        pattern = "^(?=.*?\\d)(?=.*?[a-zA-Z'\"<>*])[a-zA-Z\\d \\.'\"<>*]+$",
                         perl = TRUE),
       true = "May contain data",
       false = NA_character_
