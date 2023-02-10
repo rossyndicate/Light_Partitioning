@@ -1,0 +1,37 @@
+# https://www.waterqualitydata.us/Codes/Characteristicname?mimeType=xml
+# characteristicName:
+
+
+
+    
+  chlorophyll:
+    - "Chlorophyll"
+    - "Chlorophyll A"
+    - "Chlorophyll a"
+    - "Chlorophyll a (probe relative fluorescence)"
+    - "Chlorophyll a (probe)"
+    - "Chlorophyll a - Periphyton (attached)"
+    - "Chlorophyll a - Phytoplankton (suspended)"
+    - "Chlorophyll a, corrected for pheophytin"
+    - "Chlorophyll a, free of pheophytin"
+    - "Chlorophyll a, uncorrected for pheophytin"
+    - "Chlorophyll b"
+    - "Chlorophyll c"
+    - "Chlorophyll/Pheophytin ratio"
+    
+  secchi:
+    - "Depth, Secchi disk depth"
+    - "Depth, Secchi disk depth (choice list)"
+    - "Secchi Reading Condition (choice list)"
+    - "Secchi depth"
+    - "Water transparency, Secchi disc"
+      
+  doc:
+    - "Organic carbon"
+    - "Total carbon"
+    - "Hydrophilic fraction of organic carbon"
+    - "Non-purgeable Organic Carbon (NPOC)"
+  
+  tss:
+    - "Total suspended solids"
+    - "Total Suspended Particulate Matter"
