@@ -1,0 +1,399 @@
+---
+title: "DOC Cleaning"
+author: "Michael Meyer"
+date: "2023-02-01"
+output: html_document
+---
+# Aggregating
+
+```{r}
+library(kableExtra)
+library(feather)
+library(tidyverse)
+library(knitr)
+library(lubridate)
+library(forcats)
+library(rvest)
+library(scales)
+library(ggthemes)
+
+#COLOR-BLIND PALLETTE:#
+#show_col(colorblind_pal()(8))
+
+
+site_url <- 'https://help.waterdata.usgs.gov/parameter_cd?group_cd=%'
+
+tables <- read_html(site_url) %>%
+  html_nodes('table') %>%
+  html_table()
+
+pcodes <-tables[[1]] %>%
+  janitor::clean_names() %>%
+  mutate(parm_cd=str_pad(as.character(parameter_code), 5, pad = "0"))
+
+raw_doc <- read_feather('../../wqp_data_aoi_formatted_filtered.feather') %>% 
+  filter(parameter == "doc") %>%
+  dplyr::select(date=ActivityStartDate,
+                parameter=CharacteristicName,
+                parm_cd=USGSPCode,
+                units=ResultMeasure.MeasureUnitCode,
+                SiteID=MonitoringLocationIdentifier,
+                org=OrganizationFormalName,
+                org_id=OrganizationIdentifier,
+                time=ActivityStartTime.Time,
+                value=ResultMeasureValue,
+                sample_method=SampleCollectionMethod.MethodName,
+                analytical_method=ResultAnalyticalMethod.MethodName,
+                particle_size=ResultParticleSizeBasisText,
+                date_time=ActivityStartDateTime,
+                media=ActivityMediaName,
+                type=ActivityMediaSubdivisionName,
+                sample_depth=ActivityDepthHeightMeasure.MeasureValue,
+                sample_depth_unit=ActivityDepthHeightMeasure.MeasureUnitCode,
+                fraction=ResultSampleFractionText,
+                status=ResultStatusIdentifier,
+                field_comments=ActivityCommentText,
+                lab_comments=ResultLaboratoryCommentText,
+                result_comments=ResultCommentText) %>%
+  left_join(pcodes, by='parm_cd') %>%
+  mutate(year=year(date),
+         units = trimws(units)) %>%
+  filter(year >= 1984) %>%
+  filter(media%in%c("Water","water")) %>%
+  filter(type%in%c('Surface Water','Water','Estuary')) %>%
+  rowid_to_column(.,"index")
+```
+
+# DATA LUMPING
+
+As a first pass, I wanted to see how many analytical methods were represented
+in the dataset.
+
+```{r}
+raw_doc %>%
+  group_by(analytical_method) %>% 
+  count() %>% ungroup() %>%
+  mutate(prop = n/sum(n)) %>%
+  arrange(desc(prop)) %>%
+  ggplot() + 
+  geom_histogram(aes(x = prop)) +
+  ylab("Count") +
+  xlab("Proportion of Analytical Methods") +
+  theme_bw()
+```
+
+So, it looks like a few analytical methods are largely represented in the dataset, 
+and the vast majority of differeing analytical methods only appear less than 2.5% of the time. 
+The most consistently represented methods (i.e., those present in >= 2.5% of 
+the total unique methods) are:
+
+`raw_doc %>%
+  group_by(analytical_method) %>% 
+  count() %>% ungroup() %>%
+  mutate(prop = n/sum(n)) %>%
+  filter(prop >= .025) %>%
+  arrange(desc(prop))%>%
+  kable(.,'html',caption='Primary Analytical Methods') %>%
+  kable_styling(position='center') %>%
+  scroll_box(width='800px',height='500px')`
+
+
+```{r}
+aggregated_methods <- raw_doc %>%
+  mutate(method_status = case_when(
+    
+    # DOC-specific:
+    grepl("5310 B ~ Total Organic Carbon by Combustion-Infrared Method|Total Organic Carbon by Combustion|
+          5310 B ~ Total Organic Carbon by High-Temperature Combustion Method|SM5310B|
+          Organic-C, combustion-IR method|EPA 415.1|SM 5310 B|EPA 415.1M|TOC, combustion (SM5310B,COWSC)|
+          DOC, combustion, NDIR (SM5310B)|TOC, combustion & CO2 detection|415.1|TOC, wu, combustion (5310B;DDEC)|
+          SM185310B|DOC, wf, combustion (5310B;DDEC)|EPA Method 415.1 for Total Organic Carbon in aqueous matrices|
+          SM 5310 B v20|DOC, 0.45u silver, persulfate IR",
+          analytical_method,ignore.case=T) ~ "5310B + EPA 415.1 - Combustion + IR",
+    
+    grepl("5310 C ~ Total Organic Carbon in Water- Ultraviolet Oxidation Method|UV OR HEATED PERSULFATE OXIDATION|
+          DOC, UV/persulfate (NYWSC; ALSC)|415.2|DOC, persulfate oxidation & IR|
+          SM5310C|SM 5310 C|TOC, persulfate oxid (5310C; PA)|TOC, wu, persulfate (SM5310C;CO)|DOC, persulfate oxid, IR (COWSC)|
+          Dissolved Organic Carbon in Water by Persulfate Oxidation and Infrared Spectrometry|TOC, persulfate-UV oxid (NYSDEC)|
+          TOTAL ORGANIC CARBON (TOC) PERSULFATE-ULTRAVIOLET|TOC - Persulfate-Ultraviolet or Heated-Persulfate Oxidation Method|
+          DOC, wu, persulfate (SM5310C;ND)|TOC, wu, persulfate (SM5310C;ND)|TOC, UV/persulfate/IR (USGS-NYL)|
+          DOC, persulfate oxid (5310C; PA)|EPA 415.2|DOC, UV/persulfate (NYWSC; KECK)|
+          5310 C ~ Total Organic Carbon by High-Temperature Combustion Method|415.2 M ~ Total Organic Carbon in Water|
+          SM 5310 C, EPA 415.3|5310 C ~ Total organic carbon by Persulfate-UV or Heated-Persulfate Oxidation Method|
+          DOC, wu, persulfate (SM5310C;CO)", 
+          analytical_method,ignore.case=T) ~ "5310C + USGS O-1122-92 + EPA 415.2 - Persulfate-UV/Heated Persulfate Oxidation + IR",
+    
+    grepl("TOC, wet oxidation|WET OXIDATION METHOD|DOC,0.45um cap,acid,persulfateIR|
+    5310 D ~ Total Organic Carbon in Water- Wet-Oxidation Method|DOC, wf, 0.45 um cap, combust IR|415.3|
+    Determination of Total Organic Carbon and Specific UV Absorbance at 254 nm in Source Water and Drinking Water|
+    EPA 415.3|SM 5310 D|O-3100 ~ Total Organic Carbon in Water", 
+          analytical_method,ignore.case=T) ~ "5310D + EPA 415.3 + USGS O-3100 - Wet Oxidation + Persulfate + IR",
+    
+    grepl("440 W  ~ Determination of Carbon and Nitrogen|", 
+          analytical_method,ignore.case=T) ~ "EPA 440.0",
+    
+    grepl("9060 A ~ Total Organic Carbon in water and wastes by Carbonaceous Analyzer|9060 AM ~ Total Volatile Organic Carbon|
+          EPA 9060|EPA 9060A",
+          analytical_method,ignore.case=T) ~ "EPA 9060A - Carbonaceous Analyzer"))
+
+grouped_more <- aggregated_methods %>% 
+  mutate(grouped = case_when(grepl(pattern = "5310B", 
+                                  x = method_status) ~ "Combustion+IR",
+                            grepl(pattern = "5310C", 
+                                  x = method_status) ~ "Persulfate-UV/Heated Persulfate Oxidation+IR",
+                            grepl(pattern = "5310D", 
+                                  x = method_status) ~ "Wet Oxidation+Persulfate+IR",
+                            grepl(pattern = "EPA 440.0", 
+                                  x = method_status) ~ "Elemental Analyzer",
+                            grepl(pattern = "EPA 9060A", 
+                                  x = method_status) ~ "Carbonaceous Analyzer",
+                            is.na(method_status) ~ "Ambiguous")) %>%
+  mutate(aquasat_fraction=case_when(fraction %in% c('Dissolved','Filtered, lab','Filterable', 
+                                                    'Filtered, field') ~ "Dissolved",
+                                    fraction %in% c('Dissolved','Filtered, lab','Filterable') ~ "Dissolved",
+                                    fraction %in% c('Total','Total Recovrble',
+                                                    'Total Recoverable','Recoverable','Unfiltered',
+                                                    "Acid Soluble", "Suspended", "Non-Filterable (Particle)") ~ "Total",
+                                    fraction %in% c('Fixed') ~ "Fixed",
+                                    fraction %in% c('Non-Filterable (Particle)') ~ 'Particle',
+                                    is.na(fraction)|fraction%in%c(" ","Field", "Bed Sediment",
+                                                                  "Inorganic", "Organic") ~ "Ambiguous"))
+
+rm(site_url,tables,aggregated_methods,pcodes)
+```
+
+# Methods
+
+In the water quality portal, DOC had `r n_distinct(raw_doc$analytical_method)` unique analytical methods listed for a total of `r nrow(grouped_more)` samples. However, many of these analytical methods can be grouped together into just a few methodologies.
+
+These methods broadly represent the diversity of methods that are included 
+within the [National Environmental Methods Index (NEMI)](https://www.nemi.gov/home/).
+
+1. *Standard Method 5310B and EPA 415.1*: Combustion of sample followed by measurement 
+of carbon with a nondispersive infrared analyzer. 
+
+2. *Standard Method 5310C, USGS O-1122-92, EPA 415.2*: Oxidation of the sample
+either by persulfate in the presence of heat or ultraviolet light, followed by 
+the measurement of carbon with a nondispersive infrared analyzer.
+
+3. *Standard Method 5310D 5310D, USGS O-3100, and EPA 415.3*: The sample is first
+treated with an acid, and then oxidized with persulfate in the presence of heat 
+or ultraviolet light. Following oxidation, carbon is measured using a nondispersive infrared analyzer.
+
+4. *EPA 440.0*: This methods is largely for particulate organic carbon and nitrogen. 
+A massed amount of dried particulate or sediment is combinsted at a high temperature 
+using an elemental analyzer. 
+
+```{r}
+grouped_more %>%
+  group_by(grouped) %>%
+  summarize(count = n()) %>%
+  arrange(count) %>%
+  ggplot()+
+  geom_col(aes(x = fct_reorder(grouped,count),y = count, fill = grouped)) +
+  geom_text(aes(label = count, y = count/2, x = fct_reorder(grouped,count), 
+                color = grouped),
+                position = position_dodge(0.5),
+                vjust = 0) +
+  ylab("Count") +
+  xlab("") +
+  coord_flip() +
+  theme_bw() +
+  scale_fill_manual(values=c("#CC79A7","#E69F00","#56B4E9","#009E73","#0072B2")) + 
+  scale_color_manual(values=c("black","black","black","black","black","black")) + 
+  scale_y_continuous(labels = comma)+
+  theme(legend.position = "none",
+        text = element_text(size = 20))
+```
+
+
+Methods using nondispersive infrared analyzers are the most common across grouped methods (at r grouped_more %>% mutate(total=n()) %>% group_by(grouped) %>% filter(grepl("IR", grouped)) %>% ungroup() %>% summarize(perc=(n()/total)*100) %>% distinct() %>% ungroup() %>% select(perc) %>% round(digits=3) %>% paste()%).
+
+However, there are differences in how a sample can be treated prior to analysis on the nondispersive infrared analyzer. 
+
+```{r}
+pie <- grouped_more %>%
+  filter(grepl(pattern = "IR", x = grouped)) %>%
+  group_by(method_status) %>%
+  summarize(count=n()) %>%
+  ungroup() %>%
+  mutate(method_status=ifelse(is.na(method_status), "NDIR", method_status))
+pie <- pie %>% mutate(method_status = factor(x = method_status, levels = method_status)) %>% 
+  mutate(prop = count/sum(pie$count)) %>%  
+  mutate(ypos = cumsum(prop)- 0.5*prop) %>%
+  mutate(legend = paste0(method_status, " (", percent(prop), ")"))
+
+ggplot(data=pie, aes(x="", y=count, fill=legend)) +
+  geom_bar(stat="identity", width=1, color="white") +
+  coord_polar("y", start=0) +
+  scale_fill_manual(values=c("#009E73","#E69F00","#56B4E9","#CC79A7","#0072B2","#F0E442","#D55E00")) +
+  guides(fill=guide_legend(title="NDIR Methods")) +
+  theme_void() + # remove background, grid, numeric label
+  theme(text = element_text(size = 20))
+```
+
+# Sample Fractions
+
+When looking at relative fractions between methodologies, we see that the proportion 
+of total and dissolved fractions are approximately the same across all methods. 
+
+```{r}
+grouped_more %>%
+  filter(!is.na(grouped)) %>%
+  group_by(grouped, aquasat_fraction) %>%
+  summarize(count=n()) %>%
+  ggplot(aes(x=grouped,y=count,fill=aquasat_fraction)) +
+           geom_bar(stat="identity", width=1, color="white") +
+  theme_bw() +
+  theme(text = element_text(size = 15)) +
+  coord_flip() +
+  ylab("Grouped Methodologies")+
+  xlab("") +
+  scale_fill_manual(values=c("#CC79A7","#0072B2","#F0E442","#D55E00","#009E73")) +
+  guides(fill=guide_legend(title="Sample Fraction")) +
+  scale_y_continuous(labels = comma)
+```
+
+# How to tier DOC
+
+There is no clear way of tiering silica based on fraction if we want all tiers to be looking at the exact same thing. Instead, I suggest we only look at samples that are analyzing the dissolved fraction. The dissolved fraction makes up r grouped_more %>% mutate(total=n()) %>% group_by(aquasat_fraction) %>% filter(aquasat_fraction=="Dissolved") %>% summarize(perc=(n()/total)*100) %>% distinct() %>% ungroup() %>% select(perc) %>% round(digits=3) %>% paste()% of all silica samples in the Water Quality Portal, a clear sign that the majority of people monitoring silica are looking at the dissolved fraction. With this in mind, I suggest tiering silica as follows:
+
+Restrictive. ICP (all versions). Dissolved fraction. Only water samples with an accepted value that is reasonable with logical units.
+
+Narrowed. ICP and colorimetry (all versions). Dissolved fraction. Only water samples with an accepted value that is reasonable with logical units.
+
+Inclusive. ICP and colorimetry (all versions), and all other non-ambiguous methods. Dissolved fraction. Only water samples with an accepted value that is reasonable with logical units. Currently no samples fall within this tier.
+
+Ambiguous (and therefore removed). Ambiguous methods. Dissolved fraction. Only water samples with an accepted value that is reasonable with logical units.
+
+Without any additional steps other than harmonizing units and removing NA values (I haven't looked at whether values are reasonable), this is how that data looks:
+
+```{r}
+#identify samples that have no meaningful data related to an NA value
+no_data_samples <- grouped_more %>%
+  filter(is.na(value)&is.na(units)&is.na(lab_comments)&is.na(result_comments)) 
+
+#remove samples that have no values and no lab/result metadata
+doc_empties_removed <- grouped_more %>%
+  filter(status %in% c('Accepted','Final','Historical','Validated')) %>%
+  filter(!index %in% no_data_samples$index)
+
+vals_cleaned <- doc_empties_removed %>%
+  mutate(numeric_value=as.numeric(value)) %>%
+  filter(!is.na(numeric_value)) # need to work on this
+
+# unit_disharmony <- function(d,lookup){
+#   d %>%
+#     anti_join(silica_lookup,by='units') %>%
+#     group_by(units) %>%
+#     summarize(count=n())  %>%
+#     kable(.,'html',caption='The following measurements
+#           were dropped because the units do not make sense') %>%
+#     kable_styling() %>%
+#     scroll_box(width='500px',height='400px')
+# }
+
+#Set up a lookup table so that final units are all in ug/L. 
+doc_lookup <- tibble(units=c('mg/L','mg/l','ppm','ug/l','ug/L','mg/m3','ppb','mg/cm3','ug/ml','mg/ml','ppt','umol/L'),
+                        conversion = c(1000,1000,1000,1,1,1,1,1000000,1000,1000000,0.000001,60.080000))
+
+#unit_disharmony(vals_cleaned,silica_lookup)
+
+doc_harmonized <- vals_cleaned %>%
+  inner_join(doc_lookup,by='units') %>%
+         mutate(harmonized_value=(numeric_value*conversion)/1000,
+         harmonized_unit='mg/L')
+
+doc_tiered <- doc_harmonized %>%
+  filter(aquasat_fraction=="Dissolved") %>%
+  mutate(tiers=case_when(grouped %in% c("Wet Oxidation+Persulfate+IR",
+                                        "Persulfate-UV/Heated Persulfate Oxidation+IR") ~ "Restrictive",
+                         grouped=="Combustion+IR" ~ "Narrowed",
+                         grouped %in% c("Elemental Analyzer") ~ "Inclusive",
+                         is.na(grouped) ~ "Dropped from Aquasat"))
+
+
+# meanscores <- attributes(silica_tiered$grouped)$harmonized_value
+# 
+# meandf <- data.frame(
+#   variable = rep(names(meanscores), 4),
+#   value    = rep(unname(meanscores), 6),
+#   cluster  = rep(1:6, each=14)
+#   )
+
+ggplot(data=doc_tiered) +
+  geom_histogram(aes(x=(harmonized_value), fill=tiers), bins=100) +
+  scale_x_log10(breaks = trans_breaks("log10", function(x) 10^x),
+                labels = trans_format("log10", math_format(10^.x))) +
+  facet_wrap(~tiers, scales='fixed') +
+  xlab('DOC mg/L') +
+  theme_bw() +
+  theme(legend.position = "none",
+        text = element_text(size = 20))
+```
+
+Remaining questions
+
+Is this tiering appropriate? Does not take into account differences in which method is better for a specific range of values. I'm also lumping all ICP methods (ICP-MS, ICP-AES, ICP, etc.) together.
+
+This approach to tiering tosses out what could be perfectly good data (e.g. high-quality "total" silica). Perhaps not an issue for silica, but this could be a pretty subjective way to tier other metals when we get to them?
+
+How to handle non-detects/BDLs. In the upstream workflow I am removing all samples with non-numeric values. However, many samples have information within the value field that could be used to determine samples that were below the detection limit:
+
+```{r}
+doc_empties_removed %>%
+  mutate(numeric_value=as.numeric(value)) %>%
+  filter(is.na(numeric_value)) %>%
+  distinct(value,.keep_all = T) %>%
+  filter(!is.na(value)) %>%
+  arrange(desc(value)) %>%
+  select(value) %>%
+  kable(.,'html',caption='Text Inputted in Value Field') %>%
+  kable_styling() %>%
+  scroll_box(width='900px',height='400px')
+```  
+
+There are also a lot of samples that are shown to be UNDER some value (i.e. < 2.6). For these, I've played around with changing their value to a random number between 0 and half of the listed value, though this definitely makes some pretty large/maybe inappropriate assumptions about what these values actually mean! I've flagged these in the `aquasat_comments` field as being *Approximated, EPA MDL method*.
+
+```{r}
+mdl <- doc_empties_removed %>%
+  select(index,value) %>%
+  filter(grepl("0|1|2|3|4|5|6|7|8|9",value) & grepl("<", value))
+
+mdl$num_value <- as.numeric(str_replace_all(mdl$value, c("\\<"="", "\\*" = "")))
+
+mdl <- mdl %>%
+  mutate(zero = 0,
+         half = num_value/2)
+
+mdl$epa_mdl <- with(mdl,runif(nrow(mdl),zero,half))
+
+mdl <- select(mdl,index,epa_mdl)
+
+# replace value field with these new values
+mdls_added <- doc_empties_removed %>%
+              left_join(mdl,by="index") %>%
+              mutate(aquasat_value=ifelse(index %in% mdl$index, epa_mdl, value),
+                     aquasat_comments = ifelse(index %in% mdl$index, "Approximated, EPA LDL method", NA))
+
+approx <- mdls_added %>%
+  filter(!index %in% mdl$index) %>% # remove the samples that we've already approximated using the EPA method
+  mutate(num_value = as.numeric(value)) %>%
+  filter(is.na(num_value) & 
+           grepl("0|1|2|3|4|5|6|7|8|9", value) &
+           (grepl("result approx|RESULT IS APPROX", lab_comments, ignore.case=T)|
+            grepl("result approx|RESULT IS APPROX", result_comments, ignore.case=T ))) #select samples that are non numeric but have a number listed as well as comments related to approximation
+
+approx$approx_value <- as.numeric(str_replace_all(approx$value, c("\\*" = "")))
+approx <- select(approx,index,approx_value)
+
+# replace value field with these new values
+
+approx_added <- mdls_added %>%
+
+              left_join(approx,by="index") %>%
+
+              mutate(aquasat_value=ifelse(index %in% approx$index, approx_value, aquasat_value)) %>%
+
+              mutate(aquasat_comments=ifelse(index %in% approx$index, "Approximate", aquasat_comments))
+```
