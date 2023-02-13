@@ -1,8 +1,9 @@
-harmonize_tss <- function(raw_tss, p_codes, match_table){
+
+harmonize_doc <- function(raw_doc, p_codes, match_table){
   
   # Renaming, filter media, filter type -------------------------------------
   
-  raw_tss <- raw_tss %>% 
+  raw_doc <- raw_doc %>% 
     rename_with(~ match_table$short_name[which(match_table$wqp_name == .x)],
                 .cols = match_table$wqp_name) %>%
     # Link up USGS p-codes. and their common names can be useful for method lumping:
@@ -13,7 +14,7 @@ harmonize_tss <- function(raw_tss, p_codes, match_table){
       # Water only
       media %in% c("Water","water"),
       # only MM approved water types
-      type %in% c("Surface Water", "Water", "Estuary") | is.na(type))  %>%
+      type %in% c("Surface Water", "Water", "Estuary"))  %>%
     # index for being able to track each sample
     rowid_to_column(.,"index")
   
@@ -21,7 +22,7 @@ harmonize_tss <- function(raw_tss, p_codes, match_table){
   # Remove fails and missing data -------------------------------------------
   
   # Remove fails and missing data
-  tss_fails_removed <- raw_tss %>%
+  doc_fails_removed <- raw_doc %>%
     # No failure-related field comments, slightly different list of words than
     # lab and result list (not including things that could be used to describe
     # field conditions like "warm", "ice", etc.):
@@ -89,7 +90,7 @@ harmonize_tss <- function(raw_tss, p_codes, match_table){
   print(
     paste0(
       "Rows removed due to fails, missing data, etc.: ",
-      nrow(raw_tss) - nrow(tss_fails_removed)
+      nrow(raw_doc) - nrow(doc_fails_removed)
     )
   )
   
@@ -97,7 +98,7 @@ harmonize_tss <- function(raw_tss, p_codes, match_table){
   # Clean up MDLs -----------------------------------------------------------
   
   # Find MDLs and make them usable as numeric data
-  mdl_updates <- tss_fails_removed %>%
+  mdl_updates <- doc_fails_removed %>%
     # only want NAs and character value data:
     filter(is.na(value_numeric)) %>%
     # if the value is na BUT there is non detect language in the comments...  
@@ -132,13 +133,13 @@ harmonize_tss <- function(raw_tss, p_codes, match_table){
   
   print(
     paste(
-      round((nrow(mdl_updates)) / nrow(tss_fails_removed) * 100, 1),
+      round((nrow(mdl_updates)) / nrow(doc_fails_removed) * 100, 1),
       '% of samples had values listed as being below a detection limit'
     )
   )
   
   # Replace "harmonized_value" field with these new values
-  tss_mdls_added <- tss_fails_removed %>%
+  doc_mdls_added <- doc_fails_removed %>%
     left_join(x = ., y = mdl_updates, by = "index") %>%
     mutate(harmonized_value = ifelse(index %in% mdl_updates$index, epa_value, value_numeric),
            harmonized_units = ifelse(index %in% mdl_updates$index, mdl_units, units),
@@ -152,7 +153,7 @@ harmonize_tss <- function(raw_tss, p_codes, match_table){
   # approach to our MDL detection, we can identify value fields that are labelled
   # as being approximated.
   
-  tss_approx <- tss_mdls_added %>%
+  doc_approx <- doc_mdls_added %>%
     # First, remove the samples that we've already approximated using the EPA method:
     filter(!index %in% mdl_updates$index) %>%
     # Then select fields where the numeric value column is NA....
@@ -164,91 +165,48 @@ harmonize_tss <- function(raw_tss, p_codes, match_table){
                 grepl("result approx|RESULT IS APPROX|value approx", result_comments, ignore.case = T )|
                 grepl("result approx|RESULT IS APPROX|value approx", ResultDetectionConditionText, ignore.case = T)))
   
-  tss_approx$approx_value <- as.numeric(str_replace_all(tss_approx$value, c("\\*" = "")))
-  tss_approx$approx_value[is.nan(tss_approx$approx_value)] <- NA
+  doc_approx$approx_value <- as.numeric(str_replace_all(doc_approx$value, c("\\*" = "")))
+  doc_approx$approx_value[is.nan(doc_approx$approx_value)] <- NA
   
   # Keep important data
-  tss_approx <- tss_approx %>%
+  doc_approx <- doc_approx %>%
     select(approx_value, index)
   
   print(
     paste(
-      round((nrow(tss_approx)) / nrow(raw_tss) * 100, 3),
+      round((nrow(doc_approx)) / nrow(raw_doc) * 100, 3),
       '% of samples had values listed as approximated'
     )
   )
   
   # Replace harmonized_value field with these new values
-  tss_approx_added <- tss_mdls_added %>%
-    left_join(x = ., y = tss_approx, by = "index") %>%
-    mutate(harmonized_value = ifelse(index %in% tss_approx$index,
+  doc_approx_added <- doc_mdls_added %>%
+    left_join(x = ., y = doc_approx, by = "index") %>%
+    mutate(harmonized_value = ifelse(index %in% doc_approx$index,
                                      approx_value,
                                      harmonized_value)) %>%
-    mutate(harmonized_comments = ifelse(index %in% tss_approx$index,
+    mutate(harmonized_comments = ifelse(index %in% doc_approx$index,
                                         'Value identified as "approximated" by organization.',
                                         harmonized_comments))
   
   
   # Clean up "greater than" values ------------------------------------------
   
-  greater_vals <- tss_approx_added %>%
-    filter((!index %in% mdl_updates$index) & (!index %in% tss_approx$index)) %>%
-    # Then select fields where the NUMERIC value column is NA....
-    filter(is.na(value_numeric) & 
-             # ... AND the original value column has numeric characters...
-             grepl("[0-9]", value) &
-             #... AND a `>` symbol
-             grepl(">", value))
-  
-  greater_vals$greater_value <- as.numeric(str_replace_all(greater_vals$value,
-                                                           c("\\>" = "", "\\*" = "", "\\=" = "" )))
-  greater_vals$greater_value[is.nan(greater_vals$greater_value)] <- NA
-  
-  # Keep important data
-  greater_vals <- greater_vals %>%
-    select(greater_value, index)
-  
-  print(
-    paste(
-      round((nrow(greater_vals)) / nrow(raw_tss) * 100, 9),
-      '% of samples had values listed as being above a detection limit//greater than'
-    )
-  )
-  
-  # Replace harmonized_value field with these new values
-  tss_harmonized_values <- tss_approx_added %>%
-    left_join(x = ., y = greater_vals, by = "index") %>%
-    mutate(harmonized_value = ifelse(index %in% greater_vals$index,
-                                     greater_value, harmonized_value)) %>%
-    mutate(harmonized_comments = ifelse(index %in% greater_vals$index,
-                                        'Value identified as being greater than listed value.',
-                                        harmonized_comments))
-  
-  # Free up memory
-  rm(raw_tss)
-  gc()
+  # None present currently. Skip for now
   
   
   # Harmonize value units ---------------------------------------------------
   
-  # Set up a lookup table so that final units are all in ug/L... 
-  unit_conversion_table <- tibble(
-    units = c('mg/L', 'mg/l', 'ppm', 'ug/l', 'ug/L', 'mg/m3',
-              'ppb', 'mg/cm3', 'ug/ml', 'mg/ml', 'ppt', 'umol/L',
-              'g/l'),
-    conversion = c(1000, 1000, 1000, 1, 1, 1, 1, 1000000,
-                   1000, 1000000, 0.000001, 60.080000, 1000000)
-  )
+  # Set up a lookup table so that final units are all in ug/L. 
+  unit_conversion_table <- tibble(units = c('mg/L', 'mg/l', 'ppm', 'ug/l', 'ug/L', 'mg/m3',
+                                            'ppb', 'mg/cm3', 'ug/ml', 'mg/ml', 'ppt', 'umol/L'),
+                                  conversion = c(1000, 1000, 1000, 1, 1, 1, 1, 1000000, 1000,
+                                                 1000000, 0.000001, 60.080000))
   
-  tss_harmonized_units <- tss_harmonized_values %>%
-    # Drop nonsensical units using an inner join
+  doc_harmonized_units <- doc_approx_added %>%
     inner_join(unit_conversion_table, by = 'units') %>%
-    # To avoid editing the tss_lookup, I'm converting ug/l to mg/l here:
-    mutate(harmonized_value = (harmonized_value * conversion) / 1000,
-           harmonized_unit = 'mg/L') %>%
-    # Remove TSS values beyond some defined limits. Using 1000 mg/L based
-    # on the original light-partitioning workflow (update from aquasatv1)
-    filter(harmonized_value >= 0 & harmonized_value <= 1000) 
+    mutate(harmonized_value = (value_numeric * conversion) / 1000,
+           harmonized_unit = 'mg/L')
   
   
   # Investigate depth -------------------------------------------------------
@@ -258,8 +216,8 @@ harmonize_tss <- function(raw_tss, p_codes, match_table){
                                                          'm', 'meters'),
                                    depth_conversion = c(1 / 100, 0.3048, 0.3048,
                                                         0.0254, 1, 1)) 
-  # Join depth lookup table to tss data
-  tss_harmonized_depth <- inner_join(x = tss_harmonized_units,
+  # Join depth lookup table to doc data
+  doc_harmonized_depth <- inner_join(x = doc_harmonized_units,
                                      y = depth_conversion_table,
                                      by = c('sample_depth_unit')) %>%
     # Some depth measurements have negative values (assume that is just preference)
@@ -271,128 +229,149 @@ harmonize_tss <- function(raw_tss, p_codes, match_table){
   print(
     paste(
       'If we only kept samples that had depth information we would lose',
-      round((nrow(tss_harmonized_units) - nrow(tss_harmonized_depth)) / nrow(tss_harmonized_units) * 100, 1),
+      round((nrow(doc_harmonized_units) - nrow(doc_harmonized_depth)) / nrow(doc_harmonized_units) * 100, 1),
       '% of samples'))
   
-  rm(tss_harmonized_depth)
+  rm(doc_harmonized_depth)
   gc()
   
   
-  # Aggregate analytical methods --------------------------------------------
+  # Aggregate and tier analytical methods -----------------------------------
   
-  # Analytical method aggregation
-  
-  # Get an idea of how many analytical methods exist:
-  print(
-    paste0(
-      "Number of tss analytical methods present: ",
-      length(unique(tss_harmonized_units$analytical_method))
-    )
-  )
-  
-  # Group together TSS methods into useful categories
-  tss_aggregated_methods <- tss_harmonized_units %>%
+  doc_aggregated_methods <- doc_harmonized_units %>%
     mutate(method_status = case_when(
-      # "Gold standard" method mostly via analytical_method field:
-      grepl("2540D|2540 D|105|103|160.2",
-            analytical_method,
-            ignore.case = T) |
-        # ... also use USGS p-codes to identify the data performed with "gold standard" method:
-        grepl(paste0(c("Suspended solids, water, unfiltered, milligrams per liter",
-                       "Suspended solids, dried at 105 degrees Celsius, water",
-                       "Suspended solids dried at 105 degrees Celsius, water, unfiltered"),
-                     collapse = "|"), 
-              parameter_name_description,
-              ignore.case = T) ~ "SM 2540 B/EPA 160.2",
-      # This one seems appropriate but is heated at 110 deg Celsius:
-      grepl("Suspended solids dried at 110 degrees Celsius, water, unfiltered", 
-            parameter_name_description,
-            ignore.case = T) ~ "TSS USGS 110",
-      # This one may be appropriate to still consider:
-      grepl("2540 F|Settlable Solids|Settleable",
-            analytical_method,
-            ignore.case = T) ~ "Settleable Solids ",
-      grepl("2540C|2540 C|Total Dissolved|160.1|TDS|TOTAL FILTRATABLE RESIDUE",
-            analytical_method,
-            ignore.case = T) ~ "Nonsensical",
-      grepl("160.4|2540 E|Ashing|Volatile Residue",
-            analytical_method,
-            ignore.case = T) ~ "Nonsensical", 
-      grepl("Percent Solids|Total Solids|2540B|Total, Fixed and Volatile",
-            analytical_method,
-            ignore.case = T) ~ "Nonsensical",
-      # Clearly TSS, but not exactly sure how it was performed
-      grepl(paste0(c("Nonfilterable Solids", "Non-filterable Residue by Filtration and Drying",
-                     "Total Nonfilterable Residue", "RESIDUE, TOTAL NONFILTRABLE",
-                     "Non-Filterable Residue - TSS", "Total Suspended Solids in Water",
-                     "Total Suspended Solids", "TOTAL NONFILTRATABLE RESIDUE",
-                     "Suspended-Sediment in Water", "Residue Non- filterable (TSS)", "TSS",
-                     "Residue by Evaporation and Gravimetric"),
-                   collapse = "|"),
-            analytical_method,
-            ignore.case = T) ~ "Ambiguous TSS",
-      grepl(paste0(c("Oxygen", "Nitrogen", "Ammonia", "Metals", "E. coli", "Coliform",
-                     "Carbon", "Anion", "Cation", "Phosphorus", "Silica", "PH", "HARDNESS",
-                     "Nutrient", "Turbidity", "Temperature", "Nitrate", "Conductance",
-                     "Conductivity", "Alkalinity", "Chlorophyll", "SM ", "EPA ", "2540 G"),
-                   collapse = "|"),
-            analytical_method,
-            ignore.case = T) ~ "Nonsensical",
-      grepl(paste0(c("UNKOWN", "SSC by filtration (D3977;WI WSC)",
-                     "Sediment conc by evaporation", "Historic", "Filterable Residue - TDS",
-                     "Cheyenne River Sioux Tribe Quality Assurance Procedures"),
-                   collapse = "|"),
-            analytical_method,
-            ignore.case = T) ~ "Nonsensical",
-      # This fills the rest as ambiguous. Should include things like local
-      # SOPs, not known, etc.
-      TRUE ~ "Ambiguous")) 
+      
+      # DOC-specific:
+      grepl("5310 B ~ Total Organic Carbon by Combustion-Infrared Method|Total Organic Carbon by Combustion|
+          5310 B ~ Total Organic Carbon by High-Temperature Combustion Method|SM5310B|
+          Organic-C, combustion-IR method|EPA 415.1|SM 5310 B|EPA 415.1M|TOC, combustion (SM5310B,COWSC)|
+          DOC, combustion, NDIR (SM5310B)|TOC, combustion & CO2 detection|415.1|TOC, wu, combustion (5310B;DDEC)|
+          SM185310B|DOC, wf, combustion (5310B;DDEC)|EPA Method 415.1 for Total Organic Carbon in aqueous matrices|
+          SM 5310 B v20|DOC, 0.45u silver, persulfate IR",
+            analytical_method,ignore.case = T) ~ "5310B + EPA 415.1 - Combustion + IR",
+      
+      grepl("5310 C ~ Total Organic Carbon in Water- Ultraviolet Oxidation Method|UV OR HEATED PERSULFATE OXIDATION|
+          DOC, UV/persulfate (NYWSC; ALSC)|415.2|DOC, persulfate oxidation & IR|
+          SM5310C|SM 5310 C|TOC, persulfate oxid (5310C; PA)|TOC, wu, persulfate (SM5310C;CO)|DOC, persulfate oxid, IR (COWSC)|
+          Dissolved Organic Carbon in Water by Persulfate Oxidation and Infrared Spectrometry|TOC, persulfate-UV oxid (NYSDEC)|
+          TOTAL ORGANIC CARBON (TOC) PERSULFATE-ULTRAVIOLET|TOC - Persulfate-Ultraviolet or Heated-Persulfate Oxidation Method|
+          DOC, wu, persulfate (SM5310C;ND)|TOC, wu, persulfate (SM5310C;ND)|TOC, UV/persulfate/IR (USGS-NYL)|
+          DOC, persulfate oxid (5310C; PA)|EPA 415.2|DOC, UV/persulfate (NYWSC; KECK)|
+          5310 C ~ Total Organic Carbon by High-Temperature Combustion Method|415.2 M ~ Total Organic Carbon in Water|
+          SM 5310 C, EPA 415.3|5310 C ~ Total organic carbon by Persulfate-UV or Heated-Persulfate Oxidation Method|
+          DOC, wu, persulfate (SM5310C;CO)", 
+            analytical_method,ignore.case = T) ~ "5310C + USGS O-1122-92 + EPA 415.2 - Persulfate-UV/Heated Persulfate Oxidation + IR",
+      
+      grepl("TOC, wet oxidation|WET OXIDATION METHOD|DOC,0.45um cap,acid,persulfateIR|
+    5310 D ~ Total Organic Carbon in Water- Wet-Oxidation Method|DOC, wf, 0.45 um cap, combust IR|415.3|
+    Determination of Total Organic Carbon and Specific UV Absorbance at 254 nm in Source Water and Drinking Water|
+    EPA 415.3|SM 5310 D|O-3100 ~ Total Organic Carbon in Water", 
+            analytical_method,ignore.case = T) ~ "5310D + EPA 415.3 + USGS O-3100 - Wet Oxidation + Persulfate + IR",
+      
+      grepl("440 W  ~ Determination of Carbon and Nitrogen", 
+            analytical_method,ignore.case = T) ~ "EPA 440.0",
+      
+      grepl("9060 A ~ Total Organic Carbon in water and wastes by Carbonaceous Analyzer|9060 AM ~ Total Volatile Organic Carbon|
+          EPA 9060|EPA 9060A",
+            analytical_method,ignore.case = T) ~ "EPA 9060A - Carbonaceous Analyzer"))
   
-  tss_filter_aggregates <- tss_aggregated_methods %>%
-    filter(!grepl(pattern = "ambiguous|nonsensical",
-                  x = method_status,
-                  ignore.case = TRUE))
+  doc_grouped_more <- doc_aggregated_methods %>% 
+    mutate(grouped = case_when(grepl(pattern = "5310B", 
+                                     x = method_status) ~ "Combustion+IR",
+                               grepl(pattern = "5310C", 
+                                     x = method_status) ~ "Persulfate-UV/Heated Persulfate Oxidation+IR",
+                               grepl(pattern = "5310D", 
+                                     x = method_status) ~ "Wet Oxidation+Persulfate+IR",
+                               grepl(pattern = "EPA 440.0", 
+                                     x = method_status) ~ "Elemental Analyzer",
+                               grepl(pattern = "EPA 9060A", 
+                                     x = method_status) ~ "Carbonaceous Analyzer",
+                               is.na(method_status) ~ "Ambiguous")) %>%
+    mutate(aquasat_fraction=case_when(fraction %in% c('Dissolved','Filtered, lab','Filterable', 
+                                                      'Filtered, field') ~ "Dissolved",
+                                      fraction %in% c('Dissolved','Filtered, lab','Filterable') ~ "Dissolved",
+                                      fraction %in% c('Total','Total Recovrble',
+                                                      'Total Recoverable','Recoverable','Unfiltered',
+                                                      "Acid Soluble", "Suspended", "Non-Filterable (Particle)") ~ "Total",
+                                      fraction %in% c('Fixed') ~ "Fixed",
+                                      fraction %in% c('Non-Filterable (Particle)') ~ 'Particle',
+                                      is.na(fraction)|fraction%in%c(" ","Field", "Bed Sediment",
+                                                                    "Inorganic", "Organic") ~ "Ambiguous"))
+  
+  rm(doc_aggregated_methods)
+  gc()
+  
+  doc_tiered <- doc_grouped_more %>%
+    mutate(tiers=case_when(grouped %in% c("Wet Oxidation+Persulfate+IR",
+                                          "Persulfate-UV/Heated Persulfate Oxidation+IR") ~ "Restrictive",
+                           grouped=="Combustion+IR" ~ "Narrowed",
+                           grouped %in% c("Elemental Analyzer") ~ "Inclusive",
+                           is.na(grouped) ~ "Dropped from Aquasat"))
+  
+  
+  # Need to check to make sure that things aren't being erroneously assigned to EPA 440.0
+  # USGS_UNKN is right now, and I don't think that was intended. If not, remove
+  # the | from the EPA 440.0 line
+  # Also what tier is "Ambiguous" supposed to be in? They're coming out as NAs
+  
+  doc_filter_tiers <- doc_tiered #%>%
+  # filter(!is.na())
   
   # How many records removed due to methods?
   print(
     paste0(
       "Rows removed due to analytical method type: ",
-      nrow(tss_aggregated_methods) - nrow(tss_filter_aggregates)
+      nrow(doc_grouped_more) - nrow(doc_filter_tiers)
     )
   )
+  
+  
+  doc_tiered %>%
+    filter(analytical_method == "USGS_UNKN") %>%
+    distinct(analytical_method, method_status, grouped, tiers)
   
   
   # Filter fractions --------------------------------------------------------
   
-  # Filter out bad fractions
+  # Final step in harmonization is to group and subset fractions of interest
+  doc_harmonized <- doc_filter_tiers %>%
+    mutate(
+      harmonized_fraction = case_when(
+        fraction %in% c('Dissolved', 'Filtered, lab', 'Filterable', 
+                        'Filtered, field') ~ "Dissolved",
+        fraction %in% c('Total', 'Total Recovrble', 'Total Recoverable',
+                        'Recoverable', 'Unfiltered', "Acid Soluble", "Suspended",
+                        "Non-Filterable (Particle)") ~ "Total",
+        fraction %in% c('Fixed') ~ "Fixed",
+        fraction %in% c('Non-Filterable (Particle)') ~ 'Particle',
+        is.na(fraction) | fraction %in% c(" ", "Field", "Bed Sediment",
+                                          "Inorganic", "Organic") ~ "Ambiguous")
+    ) %>%
+    # Filter to dissolved fraction
+    filter(harmonized_fraction == "Dissolved")
   
-  # These fractions don't make sense for TSS, so should be removed. KW feels that
-  # many of the remaining fractions are open to interpretation, and doesn't want to 
-  # filter them out
-  tss_remove_fractions <- tss_filter_aggregates %>%
-    filter(!fraction %in% c('Fixed', 'Volatile', 'Dissolved', 'Acid Soluble'))
-  
-  # How many records removed due to fraction?
+  # How many records removed due to methods? Similar number as AquaSat(1)
   print(
     paste0(
       "Rows removed due to fraction type: ",
-      nrow(tss_filter_aggregates) - nrow(tss_remove_fractions)
+      nrow(doc_filter_tiers) - nrow(doc_harmonized)
     )
   )
+  
   
   # Export ------------------------------------------------------------------
   
   # Export in memory-friendly way
-  out_path <- "3_harmonize/out/harmonized_tss.feather"
+  out_path <- "3_harmonize/out/harmonized_doc.feather"
   
-  write_feather(tss_remove_fractions,
+  write_feather(doc_harmonized,
                 out_path)
   
   # Final dataset length:
   print(
     paste0(
       "Final number of records: ",
-      nrow(tss_remove_fractions)
+      nrow(doc_harmonized)
     )
   )
   
