@@ -33,26 +33,36 @@
 #' Returns a formatted and harmonized data frame containing data downloaded from 
 #' the Water Quality Portal, where each row represents a unique data record.
 #' 
-clean_wqp_data <- function(wqp_data, char_names_crosswalk,
-                           commenttext_missing = c('analysis lost', 'not analyzed', 
-                                                   'not recorded', 'not collected', 
+
+clean_wqp_data <- function(wqp_data,
+                           char_names_crosswalk,
+                           site_data,
+                           match_table,
+                           commenttext_missing = c('analysis lost', 'not analyzed',
+                                                   'not recorded', 'not collected',
                                                    'no measurement taken'),
                            duplicate_definition = c('OrganizationIdentifier',
                                                     'MonitoringLocationIdentifier',
-                                                    'ActivityStartDate', 
+                                                    'ActivityStartDate',
                                                     'ActivityStartTime.Time',
-                                                    'CharacteristicName', 
+                                                    'CharacteristicName',
                                                     'ResultSampleFractionText'),
                            remove_duplicated_rows = TRUE){
-
+  
   # Clean data and assign flags if applicable
-  wqp_data_clean <- wqp_data %>%
-    # harmonize characteristic names by assigning a common parameter name
+  wqp_data_no_dup <- wqp_data %>%
+    # Harmonize characteristic names by assigning a common parameter name
     # to the groups of characteristics supplied in `char_names_crosswalk`.
     left_join(y = char_names_crosswalk, by = c("CharacteristicName" = "char_name")) %>%
-    # flag true missing results
+    # Add in coordinate data alongside records
+    left_join(x = .,
+              y = site_data %>%
+                select(MonitoringLocationIdentifier, CharacteristicName,
+                       lon, lat, datum),
+              by = c("MonitoringLocationIdentifier", "CharacteristicName")) %>%
+    # Flag true missing results
     flag_missing_results(., commenttext_missing) %>%
-    # flag duplicate records
+    # Flag duplicate records
     flag_duplicates(., duplicate_definition) %>%
     {if(remove_duplicated_rows){
       remove_duplicates(., duplicate_definition)
@@ -62,8 +72,44 @@ clean_wqp_data <- function(wqp_data, char_names_crosswalk,
   # Inform the user what we found for duplicated rows
   if(remove_duplicated_rows){
     message(sprintf(paste0("Removed %s duplicated records."), 
-                    nrow(wqp_data) - nrow(wqp_data_clean)))
+                    nrow(wqp_data) - nrow(wqp_data_no_dup)))
   }
+  
+  
+  # Remove records flagged as having missing results
+  wqp_data_no_missing <- wqp_data_no_dup %>%
+    filter(!flag_missing_result)
+  
+  # Inform the user what we found for missing rows
+  message(sprintf(paste0("Removed %s records with missing results."), 
+                  nrow(wqp_data_no_dup) - nrow(wqp_data_no_missing)))
+  
+  
+  # Remove records that don't meet needs for status
+  wqp_data_pass_status <- wqp_data_no_missing %>%
+    filter(ResultStatusIdentifier %in% c('Accepted', 'Final', 'Historical', 'Validated'))
+  
+  # Inform the user what we found for status checks
+  message(sprintf(paste0("Removed %s records with unacceptable statuses."), 
+                  nrow(wqp_data_no_missing) - nrow(wqp_data_pass_status)))
+  
+  
+  # Remove records that don't meet needs for type
+  wqp_data_pass_media <- wqp_data_pass_status %>%
+    filter(ActivityMediaSubdivisionName %in% c('Surface Water', 'Water', 'Estuary') |
+             is.na(ActivityMediaSubdivisionName))
+  
+  # Inform the user what we found for type checks
+  message(sprintf(paste0("Removed %s records with unacceptable type."), 
+                  nrow(wqp_data_pass_status) - nrow(wqp_data_pass_media)))
+  
+  # Remove white space and rename with short names before export
+  wqp_data_clean <- wqp_data_pass_media %>%
+    rename_with(~ match_table$short_name[which(match_table$wqp_name == .x)],
+                .cols = match_table$wqp_name) %>%
+    mutate(year = year(date),
+           units = trimws(units))
+    
   
   return(wqp_data_clean)
   
@@ -74,8 +120,9 @@ clean_wqp_data <- function(wqp_data, char_names_crosswalk,
 #' 
 #' @description 
 #' Function to flag true missing results, i.e. when the result measure value 
-#' and detection limit value are both NA, when "not reported" is found in the
-#' column "ResultDetectionConditionText", or when any of the strings from
+#' and detection limit value are both NA; when results, units, and the three
+#' comment fields are NA; when "not reported" is found in the
+#' column "ResultDetectionConditionText"; or when any of the strings from
 #' `commenttext_missing` are found in the column "ResultCommentText".
 #' 
 #' @param wqp_data data frame containing the data downloaded from the WQP, 
@@ -95,6 +142,9 @@ flag_missing_results <- function(wqp_data, commenttext_missing){
   wqp_data_out <- wqp_data %>%
     mutate(flag_missing_result = 
              ( is.na(ResultMeasureValue) & is.na(DetectionQuantitationLimitMeasure.MeasureValue) ) |
+             ( is.na(ResultMeasureValue) & is.na(ResultMeasure.MeasureUnitCode) &
+                 is.na(ActivityCommentText) & is.na(ResultLaboratoryCommentText) &
+                 is.na(ResultCommentText) ) |
              grepl("not reported", ResultDetectionConditionText, ignore.case = TRUE) |
              grepl(paste(commenttext_missing, collapse = "|"), ResultCommentText, ignore.case = TRUE)
     )
@@ -157,7 +207,7 @@ flag_duplicates <- function(wqp_data, duplicate_definition){
 #' duplicated rows have been removed. 
 #' 
 remove_duplicates <- function(wqp_data, duplicate_definition){
-
+  
   wqp_data_out <- wqp_data %>%
     group_by(across(all_of(duplicate_definition))) %>% 
     # arrange all rows to maintain consistency in row order across users/machines;

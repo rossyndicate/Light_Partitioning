@@ -100,6 +100,7 @@ the total unique methods) are:
 
 ```{r}
 aggregated_methods <- raw_doc %>%
+  filter(!grepl("Oxygen|Nitrogen|Ammonia|Metals|E. coli|Anion|Cation|Phosphorus|Silica|PH|HARDNESS|Nutrient|Turbidity|Nitrate|Conductance|Alkalinity|Chlorophyll|Solids", x = analytical_method, ignore.case = TRUE)) %>%
   mutate(method_status = case_when(
     
     # DOC-specific:
@@ -129,12 +130,33 @@ aggregated_methods <- raw_doc %>%
     EPA 415.3|SM 5310 D|O-3100 ~ Total Organic Carbon in Water", 
           analytical_method,ignore.case=T) ~ "5310D + EPA 415.3 + USGS O-3100 - Wet Oxidation + Persulfate + IR",
     
-    grepl("440 W  ~ Determination of Carbon and Nitrogen|", 
+    grepl("440 W  ~ Determination of Carbon and Nitrogen", 
           analytical_method,ignore.case=T) ~ "EPA 440.0",
     
     grepl("9060 A ~ Total Organic Carbon in water and wastes by Carbonaceous Analyzer|9060 AM ~ Total Volatile Organic Carbon|
           EPA 9060|EPA 9060A",
-          analytical_method,ignore.case=T) ~ "EPA 9060A - Carbonaceous Analyzer"))
+          analytical_method,ignore.case=T) ~ "EPA 9060A - Carbonaceous Analyzer",
+    !grepl("5310 B ~ Total Organic Carbon by Combustion-Infrared Method|Total Organic Carbon by Combustion|
+          5310 B ~ Total Organic Carbon by High-Temperature Combustion Method|SM5310B|
+          Organic-C, combustion-IR method|EPA 415.1|SM 5310 B|EPA 415.1M|TOC, combustion (SM5310B,COWSC)|
+          DOC, combustion, NDIR (SM5310B)|TOC, combustion & CO2 detection|415.1|TOC, wu, combustion (5310B;DDEC)|
+          SM185310B|DOC, wf, combustion (5310B;DDEC)|EPA Method 415.1 for Total Organic Carbon in aqueous matrices|
+          SM 5310 B v20|DOC, 0.45u silver, persulfate IR|5310 C ~ Total Organic Carbon in Water- Ultraviolet Oxidation Method|
+          UV OR HEATED PERSULFATE OXIDATION|
+          DOC, UV/persulfate (NYWSC; ALSC)|415.2|DOC, persulfate oxidation & IR|
+          SM5310C|SM 5310 C|TOC, persulfate oxid (5310C; PA)|TOC, wu, persulfate (SM5310C;CO)|DOC, persulfate oxid, IR (COWSC)|
+          Dissolved Organic Carbon in Water by Persulfate Oxidation and Infrared Spectrometry|TOC, persulfate-UV oxid (NYSDEC)|
+          TOTAL ORGANIC CARBON (TOC) PERSULFATE-ULTRAVIOLET|TOC - Persulfate-Ultraviolet or Heated-Persulfate Oxidation Method|
+          DOC, wu, persulfate (SM5310C;ND)|TOC, wu, persulfate (SM5310C;ND)|TOC, UV/persulfate/IR (USGS-NYL)|
+          DOC, persulfate oxid (5310C; PA)|EPA 415.2|DOC, UV/persulfate (NYWSC; KECK)|
+          5310 C ~ Total Organic Carbon by High-Temperature Combustion Method|415.2 M ~ Total Organic Carbon in Water|
+          SM 5310 C, EPA 415.3|5310 C ~ Total organic carbon by Persulfate-UV or Heated-Persulfate Oxidation Method|
+          DOC, wu, persulfate (SM5310C;CO)|TOC, wet oxidation|WET OXIDATION METHOD|DOC,0.45um cap,acid,persulfateIR|
+    5310 D ~ Total Organic Carbon in Water- Wet-Oxidation Method|DOC, wf, 0.45 um cap, combust IR|415.3|
+    Determination of Total Organic Carbon and Specific UV Absorbance at 254 nm in Source Water and Drinking Water|
+    EPA 415.3|SM 5310 D|O-3100 ~ Total Organic Carbon in Water|9060 A ~ Total Organic Carbon in water and wastes by Carbonaceous Analyzer|9060 AM ~ Total Volatile Organic Carbon|
+          EPA 9060|EPA 9060A",
+          analytical_method,ignore.case=T) & !is.na(analytical_method) ~ "Ambiguous"))
 
 grouped_more <- aggregated_methods %>% 
   mutate(grouped = case_when(grepl(pattern = "5310B", 
@@ -147,7 +169,7 @@ grouped_more <- aggregated_methods %>%
                                   x = method_status) ~ "Elemental Analyzer",
                             grepl(pattern = "EPA 9060A", 
                                   x = method_status) ~ "Carbonaceous Analyzer",
-                            is.na(method_status) ~ "Ambiguous")) %>%
+                            method_status == "Ambiguous" ~ "Ambiguous")) %>%
   mutate(aquasat_fraction=case_when(fraction %in% c('Dissolved','Filtered, lab','Filterable', 
                                                     'Filtered, field') ~ "Dissolved",
                                     fraction %in% c('Dissolved','Filtered, lab','Filterable') ~ "Dissolved",
@@ -239,7 +261,6 @@ of total and dissolved fractions are approximately the same across all methods.
 
 ```{r}
 grouped_more %>%
-  filter(!is.na(grouped)) %>%
   group_by(grouped, aquasat_fraction) %>%
   summarize(count=n()) %>%
   ggplot(aes(x=grouped,y=count,fill=aquasat_fraction)) +
@@ -309,8 +330,8 @@ doc_tiered <- doc_harmonized %>%
   mutate(tiers=case_when(grouped %in% c("Wet Oxidation+Persulfate+IR",
                                         "Persulfate-UV/Heated Persulfate Oxidation+IR") ~ "Restrictive",
                          grouped=="Combustion+IR" ~ "Narrowed",
-                         grouped %in% c("Elemental Analyzer") ~ "Inclusive",
-                         is.na(grouped) ~ "Dropped from Aquasat"))
+                         grouped %in% c("Ambiguous", "Carbonaceous Analyzer") ~ "Inclusive",
+                         is.na(grouped) ~ "Dropped from Aquasat")) 
 
 
 # meanscores <- attributes(silica_tiered$grouped)$harmonized_value
