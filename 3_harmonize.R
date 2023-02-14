@@ -9,7 +9,9 @@ source("3_harmonize/src/harmonization_report_helper_functions.R")
 source("3_harmonize/src/harmonize_sdd.R")
 source("3_harmonize/src/harmonize_tss.R")
 source("3_harmonize/src/harmonize_chla.R")
+source("3_harmonize/src/harmonize_doc.R")
 source("3_harmonize/src/remove_duplicates.R")
+source("3_harmonize/src/find_simultaneous.R")
 
 
 p3_targets_list <- list(
@@ -47,7 +49,12 @@ p3_targets_list <- list(
              p3_wqp_data_aoi_formatted %>%
                left_join(x = .,
                          y = p1_char_names_crosswalk,
-                         by = c("CharacteristicName" = "char_name")),
+                         by = c("CharacteristicName" = "char_name")) %>%
+               left_join(x = .,
+                         y = p2_site_counts %>%
+                           select(MonitoringLocationIdentifier, CharacteristicName,
+                                  lon, lat, datum),
+                         by = c("MonitoringLocationIdentifier", "CharacteristicName")),
              format = "feather"),
   
   # A quick separate step to export the dataset to a file for easier review
@@ -102,10 +109,10 @@ p3_targets_list <- list(
   
   tar_target(harmonized_chla,
              harmonize_chla(raw_chla = wqp_data_aoi_formatted_filtered %>%
-                             filter(parameter == "chlorophyll"),
-                           p_codes = p_codes,
-                           match_table = wqp_col_match,
-                           chla_analytical_method_matchup = chla_analytical_method_matchup),
+                              filter(parameter == "chlorophyll"),
+                            p_codes = p_codes,
+                            match_table = wqp_col_match,
+                            chla_analytical_method_matchup = chla_analytical_method_matchup),
              packages = c("tidyverse", "lubridate", "feather")),
   
   tar_target(harmonized_sdd,
@@ -117,8 +124,24 @@ p3_targets_list <- list(
                            sdd_analytical_method_matchup = sdd_analytical_method_matchup,
                            sdd_sample_method_matchup = sdd_sample_method_matchup,
                            sdd_equipment_matchup = sdd_equipment_matchup),
-             packages = c("tidyverse", "lubridate", "feather"))#,
+             packages = c("tidyverse", "lubridate", "feather")),
   
-  # tar_target(harmonized_doc)
+  tar_target(harmonized_doc,
+             harmonize_doc(raw_doc = wqp_data_aoi_formatted_filtered %>%
+                             filter(parameter == "doc"),
+                           p_codes = p_codes,
+                           match_table = wqp_col_match),
+             packages = c("tidyverse", "lubridate", "feather")),
+  
 
-  )
+# Find simultaneous records -----------------------------------------------
+
+tar_target(simultaneous_data,
+           find_simultaneous(site_info = p2_site_counts,
+                             chla_path = harmonized_chla,
+                             doc_path = harmonized_doc,
+                             sdd_path = harmonized_sdd,
+                             tss_path = harmonized_tss),
+           packages = c("tidyverse", "lubridate", "feather"))  
+  
+)
