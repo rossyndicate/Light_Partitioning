@@ -1,27 +1,20 @@
 
-harmonize_doc <- function(raw_doc, p_codes, match_table){
+harmonize_doc <- function(raw_doc, p_codes){
   
-  # Renaming, filter media, filter type -------------------------------------
+  # Minor data prep ---------------------------------------------------------
   
   raw_doc <- raw_doc %>% 
-    rename_with(~ match_table$short_name[which(match_table$wqp_name == .x)],
-                .cols = match_table$wqp_name) %>%
     # Link up USGS p-codes. and their common names can be useful for method lumping:
     left_join(x = ., y = p_codes, by = "parm_cd") %>%
-    mutate(year = year(date),
-           units = trimws(units)) %>%
     filter(
       # Water only
-      media %in% c("Water","water"),
-      # only MM approved water types
-      type %in% c("Surface Water", "Water", "Estuary"))  %>%
-    # index for being able to track each sample
+      media %in% c("Water","water"))  %>%
+    # Index for being able to track each sample
     rowid_to_column(.,"index")
   
   
-  # Remove fails and missing data -------------------------------------------
+  # Remove fails ------------------------------------------------------------
   
-  # Remove fails and missing data
   doc_fails_removed <- raw_doc %>%
     # No failure-related field comments, slightly different list of words than
     # lab and result list (not including things that could be used to describe
@@ -239,6 +232,14 @@ harmonize_doc <- function(raw_doc, p_codes, match_table){
   # Aggregate and tier analytical methods -----------------------------------
   
   doc_aggregated_methods <- doc_harmonized_units %>%
+    filter(!grepl(
+      paste0(
+        c("Oxygen", "Nitrogen", "Ammonia", "Metals", "E. coli", "Anion", "Cation",
+          "Phosphorus", "Silica", "PH", "HARDNESS", "Nutrient", "Turbidity",
+          "Nitrate", "Conductance", "Alkalinity", "Chlorophyll", "Solids"),
+        collapse = "|"),
+      x = analytical_method,
+      ignore.case = TRUE)) %>%
     mutate(method_status = case_when(
       
       # DOC-specific:
@@ -273,7 +274,28 @@ harmonize_doc <- function(raw_doc, p_codes, match_table){
       
       grepl("9060 A ~ Total Organic Carbon in water and wastes by Carbonaceous Analyzer|9060 AM ~ Total Volatile Organic Carbon|
           EPA 9060|EPA 9060A",
-            analytical_method,ignore.case = T) ~ "EPA 9060A - Carbonaceous Analyzer"))
+            analytical_method,ignore.case = T) ~ "EPA 9060A - Carbonaceous Analyzer",
+      !grepl("5310 B ~ Total Organic Carbon by Combustion-Infrared Method|Total Organic Carbon by Combustion|
+          5310 B ~ Total Organic Carbon by High-Temperature Combustion Method|SM5310B|
+          Organic-C, combustion-IR method|EPA 415.1|SM 5310 B|EPA 415.1M|TOC, combustion (SM5310B,COWSC)|
+          DOC, combustion, NDIR (SM5310B)|TOC, combustion & CO2 detection|415.1|TOC, wu, combustion (5310B;DDEC)|
+          SM185310B|DOC, wf, combustion (5310B;DDEC)|EPA Method 415.1 for Total Organic Carbon in aqueous matrices|
+          SM 5310 B v20|DOC, 0.45u silver, persulfate IR|5310 C ~ Total Organic Carbon in Water- Ultraviolet Oxidation Method|
+          UV OR HEATED PERSULFATE OXIDATION|
+          DOC, UV/persulfate (NYWSC; ALSC)|415.2|DOC, persulfate oxidation & IR|
+          SM5310C|SM 5310 C|TOC, persulfate oxid (5310C; PA)|TOC, wu, persulfate (SM5310C;CO)|DOC, persulfate oxid, IR (COWSC)|
+          Dissolved Organic Carbon in Water by Persulfate Oxidation and Infrared Spectrometry|TOC, persulfate-UV oxid (NYSDEC)|
+          TOTAL ORGANIC CARBON (TOC) PERSULFATE-ULTRAVIOLET|TOC - Persulfate-Ultraviolet or Heated-Persulfate Oxidation Method|
+          DOC, wu, persulfate (SM5310C;ND)|TOC, wu, persulfate (SM5310C;ND)|TOC, UV/persulfate/IR (USGS-NYL)|
+          DOC, persulfate oxid (5310C; PA)|EPA 415.2|DOC, UV/persulfate (NYWSC; KECK)|
+          5310 C ~ Total Organic Carbon by High-Temperature Combustion Method|415.2 M ~ Total Organic Carbon in Water|
+          SM 5310 C, EPA 415.3|5310 C ~ Total organic carbon by Persulfate-UV or Heated-Persulfate Oxidation Method|
+          DOC, wu, persulfate (SM5310C;CO)|TOC, wet oxidation|WET OXIDATION METHOD|DOC,0.45um cap,acid,persulfateIR|
+    5310 D ~ Total Organic Carbon in Water- Wet-Oxidation Method|DOC, wf, 0.45 um cap, combust IR|415.3|
+    Determination of Total Organic Carbon and Specific UV Absorbance at 254 nm in Source Water and Drinking Water|
+    EPA 415.3|SM 5310 D|O-3100 ~ Total Organic Carbon in Water|9060 A ~ Total Organic Carbon in water and wastes by Carbonaceous Analyzer|9060 AM ~ Total Volatile Organic Carbon|
+          EPA 9060|EPA 9060A",
+             analytical_method,ignore.case = T) & !is.na(analytical_method) ~ "Ambiguous"))
   
   doc_grouped_more <- doc_aggregated_methods %>% 
     mutate(grouped = case_when(grepl(pattern = "5310B", 
@@ -286,36 +308,20 @@ harmonize_doc <- function(raw_doc, p_codes, match_table){
                                      x = method_status) ~ "Elemental Analyzer",
                                grepl(pattern = "EPA 9060A", 
                                      x = method_status) ~ "Carbonaceous Analyzer",
-                               is.na(method_status) ~ "Ambiguous")) %>%
-    mutate(aquasat_fraction=case_when(fraction %in% c('Dissolved','Filtered, lab','Filterable', 
-                                                      'Filtered, field') ~ "Dissolved",
-                                      fraction %in% c('Dissolved','Filtered, lab','Filterable') ~ "Dissolved",
-                                      fraction %in% c('Total','Total Recovrble',
-                                                      'Total Recoverable','Recoverable','Unfiltered',
-                                                      "Acid Soluble", "Suspended", "Non-Filterable (Particle)") ~ "Total",
-                                      fraction %in% c('Fixed') ~ "Fixed",
-                                      fraction %in% c('Non-Filterable (Particle)') ~ 'Particle',
-                                      is.na(fraction)|fraction%in%c(" ","Field", "Bed Sediment",
-                                                                    "Inorganic", "Organic") ~ "Ambiguous"))
+                               method_status == "Ambiguous" ~ "Ambiguous"))
   
   rm(doc_aggregated_methods)
   gc()
   
   doc_tiered <- doc_grouped_more %>%
-    mutate(tiers=case_when(grouped %in% c("Wet Oxidation+Persulfate+IR",
-                                          "Persulfate-UV/Heated Persulfate Oxidation+IR") ~ "Restrictive",
-                           grouped=="Combustion+IR" ~ "Narrowed",
-                           grouped %in% c("Elemental Analyzer") ~ "Inclusive",
-                           is.na(grouped) ~ "Dropped from Aquasat"))
+    mutate(tiers = case_when(grouped %in% c("Wet Oxidation+Persulfate+IR",
+                                            "Persulfate-UV/Heated Persulfate Oxidation+IR") ~ "Restrictive",
+                             grouped == "Combustion+IR" ~ "Narrowed",
+                             grouped %in% c("Ambiguous", "Carbonaceous Analyzer") ~ "Inclusive",
+                             is.na(grouped) ~ "Dropped from Aquasat")) 
   
-  
-  # Need to check to make sure that things aren't being erroneously assigned to EPA 440.0
-  # USGS_UNKN is right now, and I don't think that was intended. If not, remove
-  # the | from the EPA 440.0 line
-  # Also what tier is "Ambiguous" supposed to be in? They're coming out as NAs
-  
-  doc_filter_tiers <- doc_tiered #%>%
-  # filter(!is.na())
+  doc_filter_tiers <- doc_tiered %>%
+    filter(tiers %in% c("Narrowed", "Restrictive"))
   
   # How many records removed due to methods?
   print(
@@ -324,11 +330,6 @@ harmonize_doc <- function(raw_doc, p_codes, match_table){
       nrow(doc_grouped_more) - nrow(doc_filter_tiers)
     )
   )
-  
-  
-  doc_tiered %>%
-    filter(analytical_method == "USGS_UNKN") %>%
-    distinct(analytical_method, method_status, grouped, tiers)
   
   
   # Filter fractions --------------------------------------------------------

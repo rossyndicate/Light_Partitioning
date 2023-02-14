@@ -1,26 +1,20 @@
-harmonize_tss <- function(raw_tss, p_codes, match_table){
+harmonize_tss <- function(raw_tss, p_codes){
   
-  # Renaming, filter media, filter type -------------------------------------
+  # Minor data prep ---------------------------------------------------------
   
   raw_tss <- raw_tss %>% 
-    rename_with(~ match_table$short_name[which(match_table$wqp_name == .x)],
-                .cols = match_table$wqp_name) %>%
     # Link up USGS p-codes. and their common names can be useful for method lumping:
     left_join(x = ., y = p_codes, by = "parm_cd") %>%
-    mutate(year = year(date),
-           units = trimws(units)) %>%
     filter(
       # Water only
-      media %in% c("Water","water"),
-      # only MM approved water types
-      type %in% c("Surface Water", "Water", "Estuary") | is.na(type))  %>%
-    # index for being able to track each sample
+      media %in% c("Water","water"))  %>%
+    # Add an index to control for cases where there's not enough identifying info
+    # to track a unique record
     rowid_to_column(.,"index")
   
   
-  # Remove fails and missing data -------------------------------------------
+  # Remove fails ------------------------------------------------------------
   
-  # Remove fails and missing data
   tss_fails_removed <- raw_tss %>%
     # No failure-related field comments, slightly different list of words than
     # lab and result list (not including things that could be used to describe
@@ -219,8 +213,8 @@ harmonize_tss <- function(raw_tss, p_codes, match_table){
   tss_harmonized_values <- tss_approx_added %>%
     left_join(x = ., y = greater_vals, by = "index") %>%
     mutate(harmonized_value = ifelse(index %in% greater_vals$index,
-                                     greater_value, harmonized_value)) %>%
-    mutate(harmonized_comments = ifelse(index %in% greater_vals$index,
+                                     greater_value, harmonized_value),
+           harmonized_comments = ifelse(index %in% greater_vals$index,
                                         'Value identified as being greater than listed value.',
                                         harmonized_comments))
   
@@ -279,8 +273,6 @@ harmonize_tss <- function(raw_tss, p_codes, match_table){
   
   
   # Aggregate analytical methods --------------------------------------------
-  
-  # Analytical method aggregation
   
   # Get an idea of how many analytical methods exist:
   print(
