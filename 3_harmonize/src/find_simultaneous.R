@@ -35,6 +35,11 @@ find_simultaneous <- function(site_info, chla_path, doc_path, sdd_path, tss_path
                          .f = inner_join,
                          by = c('SiteID', 'date', 'lon', 'lat', 'datum'))
   
+  # Inform the user of the dataset size
+  message(sprintf(paste0("The final dataset contains %s simultaneous records."), 
+                  nrow(simultaneous)))
+  
+  
   return(simultaneous)
   
 }

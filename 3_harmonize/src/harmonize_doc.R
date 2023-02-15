@@ -148,9 +148,9 @@ harmonize_doc <- function(raw_doc, p_codes){
   
   doc_approx <- doc_mdls_added %>%
     # First, remove the samples that we've already approximated using the EPA method:
-    filter(!index %in% mdl_updates$index) %>%
-    # Then select fields where the numeric value column is NA....
-    filter(is.na(value_numeric) & 
+    filter(!index %in% mdl_updates$index,
+           # Then select fields where the numeric value column is NA....
+           is.na(value_numeric) & 
              # ... AND the original value column has numeric characters...
              grepl("[0-9]", value) &
              # ...AND any of the comment fields have approximation language...
@@ -177,8 +177,8 @@ harmonize_doc <- function(raw_doc, p_codes){
     left_join(x = ., y = doc_approx, by = "index") %>%
     mutate(harmonized_value = ifelse(index %in% doc_approx$index,
                                      approx_value,
-                                     harmonized_value)) %>%
-    mutate(harmonized_comments = ifelse(index %in% doc_approx$index,
+                                     harmonized_value),
+           harmonized_comments = ifelse(index %in% doc_approx$index,
                                         'Value identified as "approximated" by organization.',
                                         harmonized_comments))
   

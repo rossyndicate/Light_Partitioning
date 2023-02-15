@@ -86,44 +86,142 @@ harmonize_chla <- function(raw_chla, p_codes, chla_analytical_method_matchup){
   
   # Clean up MDLs -----------------------------------------------------------
   
-  # Needs updating
+  # Find MDLs and make them usable as numeric data
+  mdl_updates <- chla_fails_removed %>%
+    # only want NAs and character value data:
+    filter(is.na(value_numeric)) %>%
+    # if the value is na BUT there is non detect language in the comments...  
+    mutate(
+      mdl_vals = ifelse(test = (is.na(value) & 
+                                  (grepl("non-detect|not detect|non detect|undetect|below", lab_comments, ignore.case = TRUE) | 
+                                     grepl("non-detect|not detect|non detect|undetect|below", result_comments, ignore.case = TRUE) |
+                                     grepl("non-detect|not detect|non detect|undetect|below", ResultDetectionConditionText, ignore.case = TRUE))) |
+                          #.... OR, there is non-detect language in the value column itself....
+                          grepl("non-detect|not detect|non detect|undetect|below", value, ignore.case = TRUE),
+                        #... use the DetectionQuantitationLimitMeasure.MeasureValue value.
+                        yes = DetectionQuantitationLimitMeasure.MeasureValue,
+                        # if there is a `<` and a number in the values column...
+                        no = ifelse(test = grepl("[0-9]", value) & grepl("<", value),
+                                    # ... use that number as the MDL
+                                    yes = str_replace_all(value, c("\\<"="", "\\*" = "", "\\=" = "" )),
+                                    no = NA)),
+      # preserve the units if they are provided:
+      mdl_units = ifelse(!is.na(mdl_vals), DetectionQuantitationLimitMeasure.MeasureUnitCode, units),
+      # zero = 0,
+      half = as.numeric(mdl_vals) / 2)
   
-  # Now label rows that may have data in them still (i.e., some numeric and
-  # some character data)
-  chla_values_flagged <- chla_fails_removed %>%
-    mutate(value_text_flag = if_else(
-      condition = grepl(x = value,
-                        # Adapted from https://stackoverflow.com/a/31761609
-                        pattern = "^(?=.*?\\d)(?=.*?[a-zA-Z'\"<>])[a-zA-Z\\d \\.'\"<>]+$",
-                        perl = TRUE),
-      true = "May contain data",
-      false = NA_character_
-    ),
-    value_numeric = as.numeric(value),
-    # Adapting from USGS pipeline:
-    # Remove the symbol and leave the value when result starts with a < or >
-    value_numeric = if_else(
-      condition = grepl("^[<|>]", value),
-      true = as.numeric(gsub("[[:space:]]", "", gsub("<|>", "", value))),
-      false = value_numeric
+  # Using the EPA standard for non-detects, select a random number between zero and HALF the MDL:
+  mdl_updates$epa_value <- with(mdl_updates, runif(nrow(mdl_updates), 0, half))
+  mdl_updates$epa_value[is.nan(mdl_updates$epa_value)] <- NA
+  
+  # Keep important data
+  mdl_updates <- mdl_updates %>%
+    select(index, epa_value, mdl_vals, mdl_units) %>%
+    filter(!is.na(epa_value))
+  
+  
+  print(
+    paste(
+      round((nrow(mdl_updates)) / nrow(chla_fails_removed) * 100, 1),
+      '% of samples had values listed as being below a detection limit'
     )
-    )
+  )
+  
+  # Replace "harmonized_value" field with these new values
+  chla_mdls_added <- chla_fails_removed %>%
+    left_join(x = ., y = mdl_updates, by = "index") %>%
+    mutate(harmonized_value = ifelse(index %in% mdl_updates$index, epa_value, value_numeric),
+           harmonized_units = ifelse(index %in% mdl_updates$index, mdl_units, units),
+           harmonized_comments = ifelse(index %in% mdl_updates$index,
+                                        "Approximated using the EPA's MDL method.", NA))
   
   
   # Clean up approximated values --------------------------------------------
   
-  # Needs updating
+  # Next step, incorporating and flagging "approximated" values. Using a similar
+  # approach to our MDL detection, we can identify value fields that are labelled
+  # as being approximated.
   
+  chla_approx <- chla_mdls_added %>%
+    # First, remove the samples that we've already approximated using the EPA method:
+    filter(!index %in% mdl_updates$index,
+           # Then select fields where the numeric value column is NA....
+           is.na(value_numeric) & 
+             # ... AND the original value column has numeric characters...
+             grepl("[0-9]", value) &
+             # ...AND any of the comment fields have approximation language...
+             (grepl("result approx|RESULT IS APPROX|value approx", lab_comments, ignore.case = T)|
+                grepl("result approx|RESULT IS APPROX|value approx", result_comments, ignore.case = T )|
+                grepl("result approx|RESULT IS APPROX|value approx", ResultDetectionConditionText, ignore.case = T)))
+  
+  chla_approx$approx_value <- as.numeric(str_replace_all(chla_approx$value, c("\\*" = "")))
+  chla_approx$approx_value[is.nan(chla_approx$approx_value)] <- NA
+  
+  # Keep important data
+  chla_approx <- chla_approx %>%
+    select(approx_value, index)
+  
+  print(
+    paste(
+      round((nrow(chla_approx)) / nrow(raw_chla) * 100, 3),
+      '% of samples had values listed as approximated'
+    )
+  )
+  
+  # Replace harmonized_value field with these new values
+  chla_approx_added <- chla_mdls_added %>%
+    left_join(x = ., y = chla_approx, by = "index") %>%
+    mutate(harmonized_value = ifelse(index %in% chla_approx$index,
+                                     approx_value,
+                                     harmonized_value),
+           harmonized_comments = ifelse(index %in% chla_approx$index,
+                                        'Value identified as "approximated" by organization.',
+                                        harmonized_comments))
   
   # Clean up "greater than" values ------------------------------------------
   
-  # Needs updating
+  greater_vals <- chla_approx_added %>%
+    filter((!index %in% mdl_updates$index) & (!index %in% chla_approx$index)) %>%
+    # Then select fields where the NUMERIC value column is NA....
+    filter(is.na(value_numeric) & 
+             # ... AND the original value column has numeric characters...
+             grepl("[0-9]", value) &
+             #... AND a `>` symbol
+             grepl(">", value))
+  
+  greater_vals$greater_value <- as.numeric(str_replace_all(greater_vals$value,
+                                                           c("\\>" = "", "\\*" = "", "\\=" = "" )))
+  greater_vals$greater_value[is.nan(greater_vals$greater_value)] <- NA
+  
+  # Keep important data
+  greater_vals <- greater_vals %>%
+    select(greater_value, index)
+  
+  print(
+    paste(
+      round((nrow(greater_vals)) / nrow(raw_chla) * 100, 9),
+      '% of samples had values listed as being above a detection limit//greater than'
+    )
+  )
+  
+  # Replace harmonized_value field with these new values
+  chla_harmonized_values <- chla_approx_added %>%
+    left_join(x = ., y = greater_vals, by = "index") %>%
+    mutate(harmonized_value = ifelse(index %in% greater_vals$index,
+                                     greater_value, harmonized_value),
+           harmonized_comments = ifelse(index %in% greater_vals$index,
+                                        'Value identified as being greater than listed value.',
+                                        harmonized_comments))
+  
+  # Free up memory
+  rm(raw_chla)
+  gc()
   
   
   # Harmonize value units ---------------------------------------------------
   
   # Now count the units column: 
-  unit_counts <- raw_chla %>%
+  unit_counts <- chla_harmonized_values %>%
     count(units) %>%
     arrange(desc(n))
   
@@ -132,7 +230,7 @@ harmonize_chla <- function(raw_chla, p_codes, chla_analytical_method_matchup){
     conversion = c(1000, 1000, 1, 1, 1, 1000000, 1000, 1000000, 1000000)
   )
   
-  converted_units_chla <- chla_values_flagged %>%
+  converted_units_chla <- chla_harmonized_values %>%
     inner_join(x = .,
                y = unit_conversion_table,
                by = "units") %>%
@@ -147,7 +245,7 @@ harmonize_chla <- function(raw_chla, p_codes, chla_analytical_method_matchup){
   print(
     paste0(
       "Rows removed due to unrealistic values: ",
-      nrow(chla_values_flagged) - nrow(converted_units_chla)
+      nrow(chla_harmonized_values) - nrow(converted_units_chla)
     )
   )
   
@@ -156,11 +254,11 @@ harmonize_chla <- function(raw_chla, p_codes, chla_analytical_method_matchup){
   
   # As with value col, check for entries with potential salvageable data. But don't
   # create a flag column for this one
-  salvage_depths <- raw_chla %>%
+  salvage_depths <- converted_units_chla %>%
     filter(grepl(x = sample_depth, pattern = "-|>|<|=")) %>%
     count(sample_depth)
   
-  salvage_depth_units <- raw_chla %>%
+  salvage_depth_units <- converted_units_chla %>%
     count(sample_depth_unit)
   
   depth_unit_conversion_table <- tibble(
@@ -195,7 +293,7 @@ harmonize_chla <- function(raw_chla, p_codes, chla_analytical_method_matchup){
   print(
     paste0(
       "Number of chla analytical methods present: ",
-      length(unique(raw_chla$analytical_method))
+      length(unique(converted_depth_units_chla$analytical_method))
     )
   )
   
@@ -224,7 +322,7 @@ harmonize_chla <- function(raw_chla, p_codes, chla_analytical_method_matchup){
   # Filter fractions --------------------------------------------------------
   
   # Now count the fraction column
-  fraction_counts <- raw_chla %>%
+  fraction_counts <- grouped_analytical_methods_chla %>%
     count(fraction) %>%
     arrange(desc(n))
   
@@ -252,7 +350,7 @@ harmonize_chla <- function(raw_chla, p_codes, chla_analytical_method_matchup){
   print(
     paste0(
       "Number of chla sample methods present in raw dataset: ",
-      length(unique(raw_chla$sample_method)),
+      length(unique(grouped_fractions_chla$sample_method)),
       ". Skipping due to length."
     )
   )
@@ -264,7 +362,7 @@ harmonize_chla <- function(raw_chla, p_codes, chla_analytical_method_matchup){
   print(
     paste0(
       "Number of chla equipment types present in raw dataset: ",
-      length(unique(raw_chla$collection_equipment)),
+      length(unique(grouped_fractions_chla$collection_equipment)),
       ". Skipping due to length."
     )
   )
