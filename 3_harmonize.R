@@ -1,8 +1,6 @@
 # Source the functions that will be used to build the targets in p3_targets_list
 source("3_harmonize/src/clean_wqp_data.R")
 source("3_harmonize/src/create_match_table.R")
-source("3_harmonize/src/flag_duplicated_records.R")
-source("3_harmonize/src/flag_missing_results.R")
 source("3_harmonize/src/format_columns.R")
 source("3_harmonize/src/get_p_codes.R")
 source("3_harmonize/src/harmonization_report_helper_functions.R")
@@ -10,7 +8,6 @@ source("3_harmonize/src/harmonize_sdd.R")
 source("3_harmonize/src/harmonize_tss.R")
 source("3_harmonize/src/harmonize_chla.R")
 source("3_harmonize/src/harmonize_doc.R")
-source("3_harmonize/src/remove_duplicates.R")
 source("3_harmonize/src/find_simultaneous.R")
 
 
@@ -37,6 +34,17 @@ p3_targets_list <- list(
   tar_target(wqp_col_match,
              create_match_table()),
   
+  # Cleaning steps before breaking out by parameter: 
+  # Remove duplicates, ensure meaningful results present, check data status,
+  # check media, remove white spaces
+  tar_target(wqp_data_aoi_ready,
+             clean_wqp_data(wqp_data = p3_wqp_data_aoi_formatted,
+                            char_names_crosswalk = p1_char_names_crosswalk,
+                            site_data = p2_site_counts,
+                            match_table = wqp_col_match),
+             packages = c("tidyverse", "lubridate"),
+             format = "feather"),
+
   # Get parameter codes for use in cleaning processes
   tar_target(
     name = p_codes,
@@ -44,26 +52,13 @@ p3_targets_list <- list(
     packages = c("tidyverse", "rvest", "janitor")
   ),
   
-  # The input data
-  tar_target(wqp_data_aoi_formatted_filtered,
-             p3_wqp_data_aoi_formatted %>%
-               left_join(x = .,
-                         y = p1_char_names_crosswalk,
-                         by = c("CharacteristicName" = "char_name")) %>%
-               left_join(x = .,
-                         y = p2_site_counts %>%
-                           select(MonitoringLocationIdentifier, CharacteristicName,
-                                  lon, lat, datum),
-                         by = c("MonitoringLocationIdentifier", "CharacteristicName")),
-             format = "feather"),
-  
   # A quick separate step to export the dataset to a file for easier review
   # Not integrating it deeper into existing targets for now
-  tar_file(wqp_data_aoi_formatted_filtered_out,
+  tar_file(wqp_data_aoi_ready_out,
            {
-             out_path <- "data/out/wqp_data_aoi_formatted_filtered.feather"
+             out_path <- "data/out/wqp_data_aoi_ready.feather"
              
-             write_feather(x = wqp_data_aoi_formatted_filtered,
+             write_feather(x = wqp_data_aoi_ready,
                            path = out_path)
              
              out_path
@@ -101,47 +96,42 @@ p3_targets_list <- list(
   # Harmonization process ---------------------------------------------------
   
   tar_target(harmonized_tss,
-             harmonize_tss(raw_tss = wqp_data_aoi_formatted_filtered %>%
+             harmonize_tss(raw_tss = wqp_data_aoi_ready %>%
                              filter(parameter == "tss"),
-                           p_codes = p_codes,
-                           match_table = wqp_col_match),
+                           p_codes = p_codes),
              packages = c("tidyverse", "lubridate", "pander", "feather")),
   
   tar_target(harmonized_chla,
-             harmonize_chla(raw_chla = wqp_data_aoi_formatted_filtered %>%
+             harmonize_chla(raw_chla = wqp_data_aoi_ready %>%
                               filter(parameter == "chlorophyll"),
                             p_codes = p_codes,
-                            match_table = wqp_col_match,
                             chla_analytical_method_matchup = chla_analytical_method_matchup),
              packages = c("tidyverse", "lubridate", "feather")),
   
   tar_target(harmonized_sdd,
-             harmonize_sdd(raw_sdd = wqp_data_aoi_formatted_filtered %>%
+             harmonize_sdd(raw_sdd = wqp_data_aoi_ready %>%
                              filter(parameter == "secchi"),
                            p_codes = p_codes,
-                           # Column renaming
-                           match_table = wqp_col_match,
                            sdd_analytical_method_matchup = sdd_analytical_method_matchup,
                            sdd_sample_method_matchup = sdd_sample_method_matchup,
                            sdd_equipment_matchup = sdd_equipment_matchup),
              packages = c("tidyverse", "lubridate", "feather")),
   
   tar_target(harmonized_doc,
-             harmonize_doc(raw_doc = wqp_data_aoi_formatted_filtered %>%
+             harmonize_doc(raw_doc = wqp_data_aoi_ready %>%
                              filter(parameter == "doc"),
-                           p_codes = p_codes,
-                           match_table = wqp_col_match),
+                           p_codes = p_codes),
              packages = c("tidyverse", "lubridate", "feather")),
   
-
-# Find simultaneous records -----------------------------------------------
-
-tar_target(simultaneous_data,
-           find_simultaneous(site_info = p2_site_counts,
-                             chla_path = harmonized_chla,
-                             doc_path = harmonized_doc,
-                             sdd_path = harmonized_sdd,
-                             tss_path = harmonized_tss),
-           packages = c("tidyverse", "lubridate", "feather"))  
+  
+  # Find simultaneous records -----------------------------------------------
+  
+  tar_target(simultaneous_data,
+             find_simultaneous(site_info = p2_site_counts,
+                               chla_path = harmonized_chla,
+                               doc_path = harmonized_doc,
+                               sdd_path = harmonized_sdd,
+                               tss_path = harmonized_tss),
+             packages = c("tidyverse", "lubridate", "feather"))  
   
 )

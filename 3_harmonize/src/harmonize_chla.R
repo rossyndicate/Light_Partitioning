@@ -1,30 +1,23 @@
 
-harmonize_chla <- function(raw_chla, p_codes, match_table, chla_analytical_method_matchup){
+harmonize_chla <- function(raw_chla, p_codes, chla_analytical_method_matchup){
+  
+  # Minor data prep ---------------------------------------------------------
   
   # First step is to read in the data and do basic formatting and filtering
   raw_chla <- raw_chla %>%
-    rename_with(~ match_table$short_name[which(match_table$wqp_name == .x)],
-                .cols = match_table$wqp_name) %>%
+    # Link up USGS p-codes. and their common names can be useful for method lumping:
     left_join(x = ., y = p_codes, by = "parm_cd") %>%
-    # Remove trailing white space in labels (Is this still necessary?)
-    mutate(year = year(date),
-           units = trimws(units)) %>%
     filter(
-      media %in% c("Water", "water"),
-      type %in% c("Surface Water", "Water", "Estuary", "Ocean Water",
-                  "Mixing Zone") | is.na(type)) %>%
+      media %in% c("Water", "water")) %>%
     # Add an index to control for cases where there's not enough identifying info
     # to track a unique record
     rowid_to_column(., "index")
   
-  # Identify samples that have no meaningful data
-  chla_no_data_samples <- raw_chla %>%
-    filter(is.na(value) & is.na(units) & is.na(lab_comments) & is.na(result_comments))
   
-  # Remove fails and missing data
+  # Remove fails ------------------------------------------------------------
+  
   chla_fails_removed <- raw_chla %>%
-    filter(# Finalized data
-      status %in% c('Accepted', 'Final', 'Historical', 'Validated'),
+    filter(
       # REMOVE failure-related field comments, slightly different list of words
       # than lab and result list (not including things that could be used
       # to describe field conditions like "warm", "ice", etc.)
@@ -80,9 +73,7 @@ harmonize_chla <- function(raw_chla, p_codes, match_table, chla_analytical_metho
           collapse = "|"),
         x = value,
         ignore.case = T
-      ) | is.na(value),
-      # Remove samples that have no values and no lab/result metadata
-      !index %in% chla_no_data_samples$index)
+      ) | is.na(value))
   
   # How many records removed due to fails, missing data, etc.?
   print(
@@ -91,6 +82,11 @@ harmonize_chla <- function(raw_chla, p_codes, match_table, chla_analytical_metho
       nrow(raw_chla) - nrow(chla_fails_removed)
     )
   )
+  
+  
+  # Clean up MDLs -----------------------------------------------------------
+  
+  # Needs updating
   
   # Now label rows that may have data in them still (i.e., some numeric and
   # some character data)
@@ -112,6 +108,19 @@ harmonize_chla <- function(raw_chla, p_codes, match_table, chla_analytical_metho
       false = value_numeric
     )
     )
+  
+  
+  # Clean up approximated values --------------------------------------------
+  
+  # Needs updating
+  
+  
+  # Clean up "greater than" values ------------------------------------------
+  
+  # Needs updating
+  
+  
+  # Harmonize value units ---------------------------------------------------
   
   # Now count the units column: 
   unit_counts <- raw_chla %>%
@@ -141,6 +150,9 @@ harmonize_chla <- function(raw_chla, p_codes, match_table, chla_analytical_metho
       nrow(chla_values_flagged) - nrow(converted_units_chla)
     )
   )
+  
+  
+  # Clean up depths ---------------------------------------------------------
   
   # As with value col, check for entries with potential salvageable data. But don't
   # create a flag column for this one
@@ -177,6 +189,8 @@ harmonize_chla <- function(raw_chla, p_codes, match_table, chla_analytical_metho
   )
   
   
+  # Aggregate analytical methods --------------------------------------------
+  
   # Get an idea of how many analytical methods exist:
   print(
     paste0(
@@ -206,6 +220,9 @@ harmonize_chla <- function(raw_chla, p_codes, match_table, chla_analytical_metho
     )
   )
   
+  
+  # Filter fractions --------------------------------------------------------
+  
   # Now count the fraction column
   fraction_counts <- raw_chla %>%
     count(fraction) %>%
@@ -228,6 +245,9 @@ harmonize_chla <- function(raw_chla, p_codes, match_table, chla_analytical_metho
     )
   )
   
+  
+  # Aggregate sample methods ------------------------------------------------
+  
   # Get an idea of how many sample methods exist:
   print(
     paste0(
@@ -237,6 +257,9 @@ harmonize_chla <- function(raw_chla, p_codes, match_table, chla_analytical_metho
     )
   )
   
+  
+  # Aggregate collection equipment ------------------------------------------
+  
   # Get an idea of how many equipment types exist:
   print(
     paste0(
@@ -245,6 +268,9 @@ harmonize_chla <- function(raw_chla, p_codes, match_table, chla_analytical_metho
       ". Skipping due to length."
     )
   )
+  
+  
+  # Export ------------------------------------------------------------------
   
   # Export in memory-friendly way
   data_out_path <- "3_harmonize/out/harmonized_chla.feather"

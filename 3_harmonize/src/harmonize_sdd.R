@@ -1,32 +1,26 @@
 
-harmonize_sdd <- function(raw_sdd, p_codes, match_table,
+harmonize_sdd <- function(raw_sdd, p_codes,
                           sdd_analytical_method_matchup,
                           sdd_sample_method_matchup,
                           sdd_equipment_matchup){
   
+  # Minor data prep ---------------------------------------------------------
+  
   # First step is to read in the data and do basic formatting and filtering
   raw_sdd <- raw_sdd %>%
-    rename_with(~ match_table$short_name[which(match_table$wqp_name == .x)],
-                .cols = match_table$wqp_name) %>%
     left_join(x = ., y = p_codes, by = "parm_cd") %>%
     # Remove trailing white space in labels (Is this still necessary?)
-    mutate(year = year(date),
-           units = trimws(units)) %>%
     filter(
-      media %in% c("Water", "water"),
-      type %in% c("Surface Water", "Water", "Estuary") | is.na(type)) %>%
+      media %in% c("Water", "water")) %>%
     # Add an index to control for cases where there's not enough identifying info
     # to track a unique record
     rowid_to_column(., "index")
   
-  # Identify samples that have no meaningful data
-  sdd_no_data_samples <- raw_sdd %>%
-    filter(is.na(value) & is.na(units) & is.na(lab_comments) & is.na(result_comments))
   
-  # Remove fails and missing data
+  # Remove fails ------------------------------------------------------------
+  
   sdd_fails_removed <- raw_sdd %>%
-    filter(# Finalized data
-      status %in% c('Accepted', 'Final', 'Historical', 'Validated'),
+    filter(
       # REMOVE failure-related field comments, slightly different list of words
       # than lab and result list (not including things that could be used
       # to describe field conditions like "warm", "ice", etc.)
@@ -82,9 +76,7 @@ harmonize_sdd <- function(raw_sdd, p_codes, match_table,
           collapse = "|"),
         x = value,
         ignore.case = T
-      ) | is.na(value),
-      # Remove samples that have no values and no lab/result metadata
-      !index %in% sdd_no_data_samples$index)
+      ) | is.na(value))
   
   # How many records removed due to fails, missing data, etc.?
   print(
@@ -93,6 +85,11 @@ harmonize_sdd <- function(raw_sdd, p_codes, match_table,
       nrow(raw_sdd) - nrow(sdd_fails_removed)
     )
   )
+  
+  
+  # Clean up MDLs -----------------------------------------------------------
+  
+  # Needs updating
   
   # Now label rows that may have data in them still (i.e., some numeric and
   # some character data). For example, some have "_depth_ FT"
@@ -117,6 +114,18 @@ harmonize_sdd <- function(raw_sdd, p_codes, match_table,
     )
   )
   
+  
+  # Clean up approximated values --------------------------------------------
+  
+  # Needs updating
+  
+  
+  # Clean up "greater than" values ------------------------------------------
+  
+  # Needs updating
+  
+  
+  # Harmonize value units ---------------------------------------------------
   
   # Now count the units column: 
   unit_counts <- raw_sdd %>%
@@ -147,6 +156,9 @@ harmonize_sdd <- function(raw_sdd, p_codes, match_table,
     )
   )
   
+  
+  # Aggregate analytical methods --------------------------------------------
+  
   # Get an idea of how many analytical methods exist:
   print(
     paste0(
@@ -174,6 +186,9 @@ harmonize_sdd <- function(raw_sdd, p_codes, match_table,
     )
   )
   
+  
+  # Filter fractions --------------------------------------------------------
+  
   # Now count the fraction column (the ungrouped version): 
   fraction_counts <- raw_sdd %>%
     count(fraction) %>%
@@ -195,6 +210,9 @@ harmonize_sdd <- function(raw_sdd, p_codes, match_table,
     )
   )
   
+  
+  # Aggregate sample methods ------------------------------------------------
+  
   # Now count the sample_method column: 
   sample_counts <- raw_sdd %>%
     count(sample_method) %>%
@@ -215,6 +233,9 @@ harmonize_sdd <- function(raw_sdd, p_codes, match_table,
     )
   )
   
+  
+  # Aggregate collection equipment ------------------------------------------
+  
   # Now count the collection_equipment column:
   equipment_counts <- raw_sdd %>%
     count(collection_equipment) %>%
@@ -234,6 +255,8 @@ harmonize_sdd <- function(raw_sdd, p_codes, match_table,
     )
   )
   
+  
+  # Export ------------------------------------------------------------------
   
   # Export in memory-friendly way
   data_out_path <- "3_harmonize/out/harmonized_sdd.feather"
