@@ -106,10 +106,11 @@ clean_wqp_data <- function(wqp_data,
   
   # Remove white space and rename with short names before export
   wqp_data_clean <- wqp_data_pass_media %>%
-    # Temp fix to remove Facility sites
-    anti_join(x = .,
+    # Temp fix to remove Facility sites; do this eventually in the WQP data pull
+    semi_join(x = .,
               y = wqp_metadata %>%
-                filter(ResolvedMonitoringLocationTypeName != Facility),
+                filter(ResolvedMonitoringLocationTypeName %in%
+                         c("Estuary", "Lake, Reservoir, Impoundment", "Stream")),
               by = c("OrganizationIdentifier",
                      "MonitoringLocationIdentifier",
                      "lat", "lon")) %>%
@@ -117,6 +118,10 @@ clean_wqp_data <- function(wqp_data,
                 .cols = match_table$wqp_name) %>%
     mutate(year = year(date),
            units = trimws(units))
+  
+  # Inform the user about rows dropped due to non-target location types
+  message(sprintf(paste0("Removed %s records due to non-target location types"), 
+                  nrow(wqp_data_pass_media) - nrow(wqp_data_clean)))
   
   
   return(wqp_data_clean)
