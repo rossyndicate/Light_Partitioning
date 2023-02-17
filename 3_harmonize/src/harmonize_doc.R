@@ -228,17 +228,15 @@ harmonize_doc <- function(raw_doc, p_codes){
   rm(doc_harmonized_depth)
   gc()
   
+  
   # Aggregate and tier analytical methods -----------------------------------
   
   doc_aggregated_methods <- doc_harmonized_units %>%
-    # KW: includes more phrases that are nonsensical
     filter(!grepl(
       paste0(
         c("Oxygen", "Nitrogen", "Ammonia", "Metals", "E. coli", "Anion", "Cation",
           "Phosphorus", "Silica", "PH", "HARDNESS", "Nutrient", "Turbidity",
-          "Nitrate", "Conductance", "Alkalinity", "Chlorophyll", "Solids",
-          "Temperature", "Color in Water", "Coliform", "PARTICULATE CARBON (inorg+org)",
-          "5210", "bed sed", "bs, calc", "5220", "Suspended-Sediment in Water"),
+          "Nitrate", "Conductance", "Alkalinity", "Chlorophyll", "Solids"),
         collapse = "|"),
       x = analytical_method,
       ignore.case = TRUE)) %>%
@@ -277,7 +275,7 @@ harmonize_doc <- function(raw_doc, p_codes){
       grepl("9060 A ~ Total Organic Carbon in water and wastes by Carbonaceous Analyzer|9060 AM ~ Total Volatile Organic Carbon|
           EPA 9060|EPA 9060A",
             analytical_method,ignore.case = T) ~ "EPA 9060A - Carbonaceous Analyzer",
-      (!grepl("5310 B ~ Total Organic Carbon by Combustion-Infrared Method|Total Organic Carbon by Combustion|
+      !grepl("5310 B ~ Total Organic Carbon by Combustion-Infrared Method|Total Organic Carbon by Combustion|
           5310 B ~ Total Organic Carbon by High-Temperature Combustion Method|SM5310B|
           Organic-C, combustion-IR method|EPA 415.1|SM 5310 B|EPA 415.1M|TOC, combustion (SM5310B,COWSC)|
           DOC, combustion, NDIR (SM5310B)|TOC, combustion & CO2 detection|415.1|TOC, wu, combustion (5310B;DDEC)|
@@ -297,8 +295,7 @@ harmonize_doc <- function(raw_doc, p_codes){
     Determination of Total Organic Carbon and Specific UV Absorbance at 254 nm in Source Water and Drinking Water|
     EPA 415.3|SM 5310 D|O-3100 ~ Total Organic Carbon in Water|9060 A ~ Total Organic Carbon in water and wastes by Carbonaceous Analyzer|9060 AM ~ Total Volatile Organic Carbon|
           EPA 9060|EPA 9060A",
-             # KW: include NA values in the "Ambiguous" method lump
-             analytical_method,ignore.case = T) & !is.na(analytical_method)) | is.na(analytical_method) ~ "Ambiguous"))
+             analytical_method,ignore.case = T) & !is.na(analytical_method) ~ "Ambiguous"))
   
   doc_grouped_more <- doc_aggregated_methods %>% 
     mutate(grouped = case_when(grepl(pattern = "5310B", 
@@ -320,12 +317,13 @@ harmonize_doc <- function(raw_doc, p_codes){
     mutate(tiers = case_when(grouped %in% c("Wet Oxidation+Persulfate+IR",
                                             "Persulfate-UV/Heated Persulfate Oxidation+IR") ~ "Restrictive",
                              grouped == "Combustion+IR" ~ "Narrowed",
-                             grouped %in% c("Ambiguous", "Carbonaceous Analyzer") ~ "Inclusive")) 
-  # KW: no longer filter out any of the tiers
-  doc_filter_tiers <- doc_tiered # %>%
-    #filter(tiers %in% c("Narrowed", "Restrictive",))
+                             grouped %in% c("Ambiguous", "Carbonaceous Analyzer") ~ "Inclusive",
+                             is.na(grouped) ~ "Dropped from Aquasat")) 
   
-  # How many records removed due to methods? (KW: none now, outside of the Nonsensical methods)
+  doc_filter_tiers <- doc_tiered %>%
+    filter(tiers %in% c("Narrowed", "Restrictive"))
+  
+  # How many records removed due to methods?
   print(
     paste0(
       "Rows removed due to analytical method type: ",
