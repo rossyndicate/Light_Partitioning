@@ -321,7 +321,10 @@ harmonize_doc <- function(raw_doc, p_codes){
                              is.na(grouped) ~ "Dropped from Aquasat")) 
   
   doc_filter_tiers <- doc_tiered %>%
-    filter(tiers %in% c("Narrowed", "Restrictive"))
+    filter(tiers %in% c(
+      # NAs, keeping for now
+      "Dropped from Aquasat",
+      "Narrowed", "Restrictive"))
   
   # How many records removed due to methods?
   print(

@@ -341,7 +341,7 @@ harmonize_tss <- function(raw_tss, p_codes){
       TRUE ~ "Ambiguous")) 
   
   tss_filter_aggregates <- tss_aggregated_methods %>%
-    filter(!grepl(pattern = "ambiguous|nonsensical",
+    filter(!grepl(pattern = "nonsensical",
                   x = method_status,
                   ignore.case = TRUE))
   

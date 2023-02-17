@@ -53,6 +53,7 @@ config_targets <- list(
                   siteType = c("Lake, Reservoir, Impoundment",
                                "Stream",
                                "Estuary",
+                               # Remove this in the future
                                "Facility"),
                   # Return sites with at least one data record
                   minresults = 1, 

@@ -41,7 +41,8 @@ p3_targets_list <- list(
              clean_wqp_data(wqp_data = p3_wqp_data_aoi_formatted,
                             char_names_crosswalk = p1_char_names_crosswalk,
                             site_data = p2_site_counts,
-                            match_table = wqp_col_match),
+                            match_table = wqp_col_match, 
+                            wqp_metadata = p1_wqp_inventory_aoi),
              packages = c("tidyverse", "lubridate"),
              format = "feather"),
 

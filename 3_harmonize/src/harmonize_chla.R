@@ -14,9 +14,26 @@ harmonize_chla <- function(raw_chla, p_codes, chla_analytical_method_matchup){
     rowid_to_column(., "index")
   
   
+  # Parameter name selection ------------------------------------------------
+  
+  chla_param_filter <- raw_chla %>%
+    filter(
+      orig_parameter %in% c('Chlorophyll a', 'Chlorophyll a (probe relative fluorescence)',
+                            'Chlorophyll a, corrected for pheophytin', 'Chlorophyll a (probe)',
+                            'Chlorophyll a, free of pheophytin', 'Chlorophyll a - Phytoplankton (suspended)'))
+  
+  # How many records removed due to fails, missing data, etc.?
+  print(
+    paste0(
+      "Rows removed due to non-target parameter names: ",
+      nrow(raw_chla) - nrow(chla_param_filter)
+    )
+  )
+  
+  
   # Remove fails ------------------------------------------------------------
   
-  chla_fails_removed <- raw_chla %>%
+  chla_fails_removed <- chla_param_filter %>%
     filter(
       # REMOVE failure-related field comments, slightly different list of words
       # than lab and result list (not including things that could be used
@@ -79,7 +96,7 @@ harmonize_chla <- function(raw_chla, p_codes, chla_analytical_method_matchup){
   print(
     paste0(
       "Rows removed due to fails, missing data, etc.: ",
-      nrow(raw_chla) - nrow(chla_fails_removed)
+      nrow(chla_param_filter) - nrow(chla_fails_removed)
     )
   )
   
@@ -163,7 +180,7 @@ harmonize_chla <- function(raw_chla, p_codes, chla_analytical_method_matchup){
   
   print(
     paste(
-      round((nrow(chla_approx)) / nrow(raw_chla) * 100, 3),
+      round((nrow(chla_approx)) / nrow(chla_mdls_added) * 100, 3),
       '% of samples had values listed as approximated'
     )
   )
@@ -199,7 +216,7 @@ harmonize_chla <- function(raw_chla, p_codes, chla_analytical_method_matchup){
   
   print(
     paste(
-      round((nrow(greater_vals)) / nrow(raw_chla) * 100, 9),
+      round((nrow(greater_vals)) / nrow(chla_approx_added) * 100, 9),
       '% of samples had values listed as being above a detection limit//greater than'
     )
   )
@@ -275,7 +292,7 @@ harmonize_chla <- function(raw_chla, p_codes, chla_analytical_method_matchup){
     # Surface limits - for the time being using two columns for this. Make sure
     # numeric value is within +/-2m OR the raw character version indicates something
     # similar:
-    filter(abs(harmonized_value) <= 2 |
+    filter(abs(harmonized_depth_value) <= 2 |
              sample_depth %in% c("0-2", "0-0.5"))
   
   # How many records removed due to limits on depth?
