@@ -1,5 +1,5 @@
 
-find_simultaneous <- function(site_info, chla_path, doc_path, sdd_path, tss_path){
+find_simultaneous <- function(chla_path, doc_path, sdd_path, tss_path){
   
   # Load data ---------------------------------------------------------------
   
@@ -34,6 +34,11 @@ find_simultaneous <- function(site_info, chla_path, doc_path, sdd_path, tss_path
   simultaneous <- reduce(.x = list(chla_agg, doc_agg, sdd_agg, tss_agg),
                          .f = inner_join,
                          by = c('SiteID', 'date', 'lon', 'lat', 'datum'))
+  
+  # Inform the user of the dataset size
+  message(sprintf(paste0("The final dataset contains %s simultaneous records."), 
+                  nrow(simultaneous)))
+  
   
   return(simultaneous)
   

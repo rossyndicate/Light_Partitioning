@@ -148,9 +148,9 @@ harmonize_tss <- function(raw_tss, p_codes){
   
   tss_approx <- tss_mdls_added %>%
     # First, remove the samples that we've already approximated using the EPA method:
-    filter(!index %in% mdl_updates$index) %>%
-    # Then select fields where the numeric value column is NA....
-    filter(is.na(value_numeric) & 
+    filter(!index %in% mdl_updates$index,
+           # Then select fields where the numeric value column is NA....
+           is.na(value_numeric) & 
              # ... AND the original value column has numeric characters...
              grepl("[0-9]", value) &
              # ...AND any of the comment fields have approximation language...
@@ -177,8 +177,8 @@ harmonize_tss <- function(raw_tss, p_codes){
     left_join(x = ., y = tss_approx, by = "index") %>%
     mutate(harmonized_value = ifelse(index %in% tss_approx$index,
                                      approx_value,
-                                     harmonized_value)) %>%
-    mutate(harmonized_comments = ifelse(index %in% tss_approx$index,
+                                     harmonized_value),
+           harmonized_comments = ifelse(index %in% tss_approx$index,
                                         'Value identified as "approximated" by organization.',
                                         harmonized_comments))
   
@@ -243,6 +243,14 @@ harmonize_tss <- function(raw_tss, p_codes){
     # Remove TSS values beyond some defined limits. Using 1000 mg/L based
     # on the original light-partitioning workflow (update from aquasatv1)
     filter(harmonized_value >= 0 & harmonized_value <= 1000) 
+  
+  # How many records removed due to values?
+  print(
+    paste0(
+      "Rows removed while harmonizing units: ",
+      nrow(tss_harmonized_values) - nrow(tss_harmonized_units)
+    )
+  )
   
   
   # Investigate depth -------------------------------------------------------
@@ -341,7 +349,7 @@ harmonize_tss <- function(raw_tss, p_codes){
       TRUE ~ "Ambiguous")) 
   
   tss_filter_aggregates <- tss_aggregated_methods %>%
-    filter(!grepl(pattern = "ambiguous|nonsensical",
+    filter(!grepl(pattern = "nonsensical",
                   x = method_status,
                   ignore.case = TRUE))
   
