@@ -89,46 +89,143 @@ harmonize_sdd <- function(raw_sdd, p_codes,
   
   # Clean up MDLs -----------------------------------------------------------
   
-  # Needs updating
+  # Find MDLs and make them usable as numeric data
+  mdl_updates <- sdd_fails_removed %>%
+    # only want NAs and character value data:
+    filter(is.na(value_numeric)) %>%
+    # if the value is na BUT there is non detect language in the comments...  
+    mutate(
+      mdl_vals = ifelse(test = (is.na(value) & 
+                                  (grepl("non-detect|not detect|non detect|undetect|below", lab_comments, ignore.case = TRUE) | 
+                                     grepl("non-detect|not detect|non detect|undetect|below", result_comments, ignore.case = TRUE) |
+                                     grepl("non-detect|not detect|non detect|undetect|below", ResultDetectionConditionText, ignore.case = TRUE))) |
+                          #.... OR, there is non-detect language in the value column itself....
+                          grepl("non-detect|not detect|non detect|undetect|below", value, ignore.case = TRUE),
+                        #... use the DetectionQuantitationLimitMeasure.MeasureValue value.
+                        yes = DetectionQuantitationLimitMeasure.MeasureValue,
+                        # if there is a `<` and a number in the values column...
+                        no = ifelse(test = grepl("[0-9]", value) & grepl("<", value),
+                                    # ... use that number as the MDL
+                                    yes = str_replace_all(value, c("\\<"="", "\\*" = "", "\\=" = "" )),
+                                    no = NA)),
+      # preserve the units if they are provided:
+      mdl_units = ifelse(!is.na(mdl_vals), DetectionQuantitationLimitMeasure.MeasureUnitCode, units),
+      # zero = 0,
+      half = as.numeric(mdl_vals) / 2)
   
-  # Now label rows that may have data in them still (i.e., some numeric and
-  # some character data). For example, some have "_depth_ FT"
-  sdd_values_flagged <- sdd_fails_removed %>%
-    mutate(value_text_flag = if_else(
-      condition = grepl(x = value,
-                        # Adapted from https://stackoverflow.com/a/31761609
-                        pattern = "^(?=.*?\\d)(?=.*?[a-zA-Z'\"<>*])[a-zA-Z\\d \\.'\"<>*]+$",
-                        perl = TRUE),
-      true = "May contain data",
-      false = NA_character_
-    ),
-    # But we won't use these in the numeric value column
-    value_numeric = as.numeric(value)) %>%
-    filter(!is.na(value_numeric))
+  # Using the EPA standard for non-detects, select a random number between zero and HALF the MDL:
+  mdl_updates$epa_value <- with(mdl_updates, runif(nrow(mdl_updates), 0, half))
+  mdl_updates$epa_value[is.nan(mdl_updates$epa_value)] <- NA
   
-  # How many records removed due to converting to numeric values?
+  # Keep important data
+  mdl_updates <- mdl_updates %>%
+    select(index, epa_value, mdl_vals, mdl_units) %>%
+    filter(!is.na(epa_value))
+  
+  
   print(
-    paste0(
-      "Rows removed while converting to numeric values: ",
-      nrow(sdd_fails_removed) - nrow(sdd_values_flagged)
+    paste(
+      round((nrow(mdl_updates)) / nrow(sdd_fails_removed) * 100, 1),
+      '% of samples had values listed as being below a detection limit'
     )
   )
+  
+  # Replace "harmonized_value" field with these new values
+  sdd_mdls_added <- sdd_fails_removed %>%
+    left_join(x = ., y = mdl_updates, by = "index") %>%
+    mutate(harmonized_value = ifelse(index %in% mdl_updates$index, epa_value, value_numeric),
+           harmonized_units = ifelse(index %in% mdl_updates$index, mdl_units, units),
+           harmonized_comments = ifelse(index %in% mdl_updates$index,
+                                        "Approximated using the EPA's MDL method.", NA))
   
   
   # Clean up approximated values --------------------------------------------
   
-  # Needs updating
+  # Next step, incorporating and flagging "approximated" values. Using a similar
+  # approach to our MDL detection, we can identify value fields that are labelled
+  # as being approximated.
+  
+  sdd_approx <- sdd_mdls_added %>%
+    # First, remove the samples that we've already approximated using the EPA method:
+    filter(!index %in% mdl_updates$index,
+           # Then select fields where the numeric value column is NA....
+           is.na(value_numeric) & 
+             # ... AND the original value column has numeric characters...
+             grepl("[0-9]", value) &
+             # ...AND any of the comment fields have approximation language...
+             (grepl("result approx|RESULT IS APPROX|value approx", lab_comments, ignore.case = T)|
+                grepl("result approx|RESULT IS APPROX|value approx", result_comments, ignore.case = T )|
+                grepl("result approx|RESULT IS APPROX|value approx", ResultDetectionConditionText, ignore.case = T)))
+  
+  sdd_approx$approx_value <- as.numeric(str_replace_all(sdd_approx$value, c("\\*" = "")))
+  sdd_approx$approx_value[is.nan(sdd_approx$approx_value)] <- NA
+  
+  # Keep important data
+  sdd_approx <- sdd_approx %>%
+    select(approx_value, index)
+  
+  print(
+    paste(
+      round((nrow(sdd_approx)) / nrow(sdd_mdls_added) * 100, 3),
+      '% of samples had values listed as approximated'
+    )
+  )
+  
+  # Replace harmonized_value field with these new values
+  sdd_approx_added <- sdd_mdls_added %>%
+    left_join(x = ., y = sdd_approx, by = "index") %>%
+    mutate(harmonized_value = ifelse(index %in% sdd_approx$index,
+                                     approx_value,
+                                     harmonized_value),
+           harmonized_comments = ifelse(index %in% sdd_approx$index,
+                                        'Value identified as "approximated" by organization.',
+                                        harmonized_comments))
   
   
   # Clean up "greater than" values ------------------------------------------
   
-  # Needs updating
+  greater_vals <- sdd_approx_added %>%
+    filter((!index %in% mdl_updates$index) & (!index %in% sdd_approx$index)) %>%
+    # Then select fields where the NUMERIC value column is NA....
+    filter(is.na(value_numeric) & 
+             # ... AND the original value column has numeric characters...
+             grepl("[0-9]", value) &
+             #... AND a `>` symbol
+             grepl(">", value))
+  
+  greater_vals$greater_value <- as.numeric(str_replace_all(greater_vals$value,
+                                                           c("\\>" = "", "\\*" = "", "\\=" = "" )))
+  greater_vals$greater_value[is.nan(greater_vals$greater_value)] <- NA
+  
+  # Keep important data
+  greater_vals <- greater_vals %>%
+    select(greater_value, index)
+  
+  print(
+    paste(
+      round((nrow(greater_vals)) / nrow(sdd_approx_added) * 100, 9),
+      '% of samples had values listed as being above a detection limit//greater than'
+    )
+  )
+  
+  # Replace harmonized_value field with these new values
+  sdd_harmonized_values <- sdd_approx_added %>%
+    left_join(x = ., y = greater_vals, by = "index") %>%
+    mutate(harmonized_value = ifelse(index %in% greater_vals$index,
+                                     greater_value, harmonized_value),
+           harmonized_comments = ifelse(index %in% greater_vals$index,
+                                        'Value identified as being greater than listed value.',
+                                        harmonized_comments))
+  
+  # Free up memory
+  rm(raw_sdd)
+  gc()
   
   
   # Harmonize value units ---------------------------------------------------
   
   # Now count the units column: 
-  unit_counts <- raw_sdd %>%
+  unit_counts <- sdd_harmonized_values %>%
     count(units) %>%
     arrange(desc(n))
   
@@ -137,7 +234,7 @@ harmonize_sdd <- function(raw_sdd, p_codes,
     conversion = c(1, 0.3048, 0.01, 0.0254, 0.001, 1609.34)
   )
   
-  converted_units_sdd <- sdd_values_flagged %>%
+  converted_units_sdd <- sdd_harmonized_values %>%
     inner_join(x = .,
                y = unit_conversion_table,
                by = "units") %>%
@@ -152,7 +249,7 @@ harmonize_sdd <- function(raw_sdd, p_codes,
   print(
     paste0(
       "Rows removed while converting to numeric values: ",
-      nrow(sdd_values_flagged) - nrow(converted_units_sdd)
+      nrow(sdd_harmonized_values) - nrow(converted_units_sdd)
     )
   )
   
@@ -190,7 +287,7 @@ harmonize_sdd <- function(raw_sdd, p_codes,
   # Filter fractions --------------------------------------------------------
   
   # Now count the fraction column (the ungrouped version): 
-  fraction_counts <- raw_sdd %>%
+  fraction_counts <- grouped_analytical_methods_sdd %>%
     count(fraction) %>%
     arrange(desc(n))
   
@@ -213,47 +310,51 @@ harmonize_sdd <- function(raw_sdd, p_codes,
   
   # Aggregate sample methods ------------------------------------------------
   
-  # Now count the sample_method column: 
-  sample_counts <- raw_sdd %>%
-    count(sample_method) %>%
-    arrange(desc(n))
+  # # Now count the sample_method column: 
+  # sample_counts <- grouped_fractions_sdd %>%
+  #   count(sample_method) %>%
+  #   arrange(desc(n))
+  # 
+  # # Add a new column describing the sample_method group:
+  # grouped_sample_methods_sdd <- grouped_fractions_sdd %>%
+  #   left_join(x = .,
+  #             y = sdd_sample_method_matchup,
+  #             by = c("sample_method")) %>%
+  #   filter(sample_method_grouping != "unlikely")
+  # 
+  # # How many records removed due to unlikely sample methods?
+  # print(
+  #   paste0(
+  #     "Rows removed due to unlikely sample methods: ",
+  #     nrow(grouped_fractions_sdd) - nrow(grouped_sample_methods_sdd)
+  #   )
+  # )
   
-  # Add a new column describing the sample_method group:
-  grouped_sample_methods_sdd <- grouped_fractions_sdd %>%
-    left_join(x = .,
-              y = sdd_sample_method_matchup,
-              by = c("sample_method")) %>%
-    filter(sample_method_grouping != "unlikely")
-  
-  # How many records removed due to unlikely sample methods?
-  print(
-    paste0(
-      "Rows removed due to unlikely sample methods: ",
-      nrow(grouped_fractions_sdd) - nrow(grouped_sample_methods_sdd)
-    )
-  )
+  grouped_sample_methods_sdd <- grouped_fractions_sdd
   
   
   # Aggregate collection equipment ------------------------------------------
   
-  # Now count the collection_equipment column:
-  equipment_counts <- raw_sdd %>%
-    count(collection_equipment) %>%
-    arrange(desc(n))
+  # # Now count the collection_equipment column:
+  # equipment_counts <- grouped_sample_methods_sdd %>%
+  #   count(collection_equipment) %>%
+  #   arrange(desc(n))
+  # 
+  # grouped_equipment_sdd <- grouped_sample_methods_sdd %>%
+  #   left_join(x = .,
+  #             y = sdd_equipment_matchup,
+  #             by = c("collection_equipment")) %>%
+  #   filter(equipment_grouping != "unlikely")
+  # 
+  # # How many records removed due to unlikely sample methods?
+  # print(
+  #   paste0(
+  #     "Rows removed due to unlikely sample methods: ",
+  #     nrow(grouped_sample_methods_sdd) - nrow(grouped_equipment_sdd)
+  #   )
+  # )
   
-  group_equipment_sdd <- grouped_sample_methods_sdd %>%
-    left_join(x = .,
-              y = sdd_equipment_matchup,
-              by = c("collection_equipment")) %>%
-    filter(equipment_grouping != "unlikely")
-  
-  # How many records removed due to unlikely sample methods?
-  print(
-    paste0(
-      "Rows removed due to unlikely sample methods: ",
-      nrow(grouped_sample_methods_sdd) - nrow(group_equipment_sdd)
-    )
-  )
+  grouped_equipment_sdd <- grouped_sample_methods_sdd
   
   
   # Export ------------------------------------------------------------------
@@ -261,14 +362,14 @@ harmonize_sdd <- function(raw_sdd, p_codes,
   # Export in memory-friendly way
   data_out_path <- "3_harmonize/out/harmonized_sdd.feather"
   
-  write_feather(group_equipment_sdd,
+  write_feather(grouped_equipment_sdd,
                 data_out_path)
   
   # Final dataset length:
   print(
     paste0(
       "Final number of records: ",
-      nrow(group_equipment_sdd)
+      nrow(grouped_equipment_sdd)
     )
   )
   
