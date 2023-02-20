@@ -244,6 +244,14 @@ harmonize_tss <- function(raw_tss, p_codes){
     # on the original light-partitioning workflow (update from aquasatv1)
     filter(harmonized_value >= 0 & harmonized_value <= 1000) 
   
+  # How many records removed due to values?
+  print(
+    paste0(
+      "Rows removed while harmonizing units: ",
+      nrow(tss_harmonized_values) - nrow(tss_harmonized_units)
+    )
+  )
+  
   
   # Investigate depth -------------------------------------------------------
   

@@ -1,5 +1,5 @@
 
-find_simultaneous <- function(site_info, chla_path, doc_path, sdd_path, tss_path){
+find_simultaneous <- function(chla_path, doc_path, sdd_path, tss_path){
   
   # Load data ---------------------------------------------------------------
   

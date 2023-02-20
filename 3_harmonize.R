@@ -45,7 +45,7 @@ p3_targets_list <- list(
                             wqp_metadata = p1_wqp_inventory_aoi),
              packages = c("tidyverse", "lubridate"),
              format = "feather"),
-
+  
   # Get parameter codes for use in cleaning processes
   tar_target(
     name = p_codes,
@@ -128,8 +128,7 @@ p3_targets_list <- list(
   # Find simultaneous records -----------------------------------------------
   
   tar_target(simultaneous_data,
-             find_simultaneous(site_info = p2_site_counts,
-                               chla_path = harmonized_chla,
+             find_simultaneous(chla_path = harmonized_chla,
                                doc_path = harmonized_doc,
                                sdd_path = harmonized_sdd,
                                tss_path = harmonized_tss),

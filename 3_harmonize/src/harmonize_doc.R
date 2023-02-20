@@ -201,6 +201,14 @@ harmonize_doc <- function(raw_doc, p_codes){
     mutate(harmonized_value = (value_numeric * conversion) / 1000,
            harmonized_unit = 'mg/L')
   
+  # How many records removed due to values?
+  print(
+    paste0(
+      "Rows removed while harmonizing units: ",
+      nrow(doc_approx_added) - nrow(doc_harmonized_units)
+    )
+  )
+  
   
   # Investigate depth -------------------------------------------------------
   
@@ -330,7 +338,7 @@ harmonize_doc <- function(raw_doc, p_codes){
   print(
     paste0(
       "Rows removed due to analytical method type: ",
-      nrow(doc_grouped_more) - nrow(doc_filter_tiers)
+      nrow(doc_harmonized_units) - nrow(doc_filter_tiers)
     )
   )
   

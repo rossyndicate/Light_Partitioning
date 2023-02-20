@@ -243,8 +243,8 @@ harmonize_chla <- function(raw_chla, p_codes, chla_analytical_method_matchup){
     arrange(desc(n))
   
   unit_conversion_table <- tibble(
-    units = c("mg/l", "ppm", "ug/l", "mg/m3", "ppb", "mg/cm3", "ug/ml", "mg/ml", "ppt"),
-    conversion = c(1000, 1000, 1, 1, 1, 1000000, 1000, 1000000, 1000000)
+    units = c("mg/l", "mg/L", "ppm", "ug/l", "ug/L", "mg/m3", "ppb", "mg/cm3", "ug/ml", "mg/ml", "ppt"),
+    conversion = c(1000, 1000, 1000, 1, 1, 1, 1, 1000000, 1000, 1000000, 1000000)
   )
   
   converted_units_chla <- chla_harmonized_values %>%
@@ -261,7 +261,7 @@ harmonize_chla <- function(raw_chla, p_codes, chla_analytical_method_matchup){
   # How many records removed due to limits on values?
   print(
     paste0(
-      "Rows removed due to unrealistic values: ",
+      "Rows removed while harmonizing units: ",
       nrow(chla_harmonized_values) - nrow(converted_units_chla)
     )
   )
