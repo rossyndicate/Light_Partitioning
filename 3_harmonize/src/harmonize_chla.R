@@ -254,9 +254,8 @@ harmonize_chla <- function(raw_chla, p_codes, chla_analytical_method_matchup){
     mutate(harmonized_parameter = "chl.a",
            harmonized_value = value_numeric * conversion,
            harmonized_unit = "ug/L") %>%
-    # Temporary limits 
-    filter(harmonized_value <= 1e6,
-           harmonized_value >= 0)
+    # MR limit 
+    filter(harmonized_value < 1000)
   
   # How many records removed due to limits on values?
   print(

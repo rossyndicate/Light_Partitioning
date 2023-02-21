@@ -241,9 +241,8 @@ harmonize_sdd <- function(raw_sdd, p_codes,
     mutate(harmonized_parameter = "chl.a",
            harmonized_value = value_numeric * conversion,
            harmonized_unit = "m") %>%
-    # Limit based on theoretical maximum depth
-    # https://www.nalms.org/secchidipin/monitoring-methods/the-secchi-disk/secchi-records/
-    filter(abs(harmonized_value) <= 80)
+    # MR limit
+    filter(abs(harmonized_value) < 15)
   
   # How many records removed due to unit harmonization?
   print(

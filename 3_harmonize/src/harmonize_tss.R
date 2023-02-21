@@ -240,9 +240,8 @@ harmonize_tss <- function(raw_tss, p_codes){
     # To avoid editing the tss_lookup, I'm converting ug/l to mg/l here:
     mutate(harmonized_value = (harmonized_value * conversion) / 1000,
            harmonized_unit = 'mg/L') %>%
-    # Remove TSS values beyond some defined limits. Using 1000 mg/L based
-    # on the original light-partitioning workflow (update from aquasatv1)
-    filter(harmonized_value >= 0 & harmonized_value <= 1000) 
+    # MR limit
+    filter(harmonized_value < 1000) 
   
   # How many records removed due to values?
   print(

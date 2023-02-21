@@ -131,7 +131,8 @@ p3_targets_list <- list(
              find_simultaneous(chla_path = harmonized_chla,
                                doc_path = harmonized_doc,
                                sdd_path = harmonized_sdd,
-                               tss_path = harmonized_tss),
+                               tss_path = harmonized_tss,
+                               wqp_metadata = p1_wqp_inventory_aoi),
              packages = c("tidyverse", "lubridate", "feather"))  
   
 )
