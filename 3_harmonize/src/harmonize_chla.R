@@ -251,8 +251,7 @@ harmonize_chla <- function(raw_chla, p_codes, chla_analytical_method_matchup){
     inner_join(x = .,
                y = unit_conversion_table,
                by = "units") %>%
-    mutate(harmonized_parameter = "chl.a",
-           harmonized_value = value_numeric * conversion,
+    mutate(harmonized_value = value_numeric * conversion,
            harmonized_unit = "ug/L") %>%
     # MR limit 
     filter(harmonized_value < 1000)

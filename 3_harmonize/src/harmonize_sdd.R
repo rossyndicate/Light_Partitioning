@@ -238,8 +238,7 @@ harmonize_sdd <- function(raw_sdd, p_codes,
     inner_join(x = .,
                y = unit_conversion_table,
                by = "units") %>%
-    mutate(harmonized_parameter = "chl.a",
-           harmonized_value = value_numeric * conversion,
+    mutate(harmonized_value = value_numeric * conversion,
            harmonized_unit = "m") %>%
     # MR limit
     filter(abs(harmonized_value) < 15)

@@ -133,6 +133,21 @@ p3_targets_list <- list(
                                sdd_path = harmonized_sdd,
                                tss_path = harmonized_tss,
                                wqp_metadata = p1_wqp_inventory_aoi),
-             packages = c("tidyverse", "lubridate", "feather"))  
+             packages = c("tidyverse", "lubridate", "feather")),
+  
+  # A target using the harmonized outputs to prepare a dataset for the later
+  # analysis steps
+  tar_target(harmonized_wqp_w_methods,
+             {
+               # Read in the exported harmonized datasets
+               
+               map_df(.x = c(harmonized_chla, harmonized_doc, harmonized_tss,
+                             harmonized_sdd),
+                      .f = ~ read_feather(.x) %>%
+                        select(SiteID, date, lat, lon,
+                               harmonized_parameter = parameter, orig_parameter))
+             },
+             packages = c("tidyverse", "feather"))
+  
   
 )
