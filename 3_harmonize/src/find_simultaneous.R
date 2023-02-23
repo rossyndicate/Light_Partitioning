@@ -1,5 +1,5 @@
 
-find_simultaneous <- function(chla_path, doc_path, sdd_path, tss_path){
+find_simultaneous <- function(chla_path, doc_path, sdd_path, tss_path, wqp_metadata){
   
   # Load data ---------------------------------------------------------------
   
@@ -40,6 +40,36 @@ find_simultaneous <- function(chla_path, doc_path, sdd_path, tss_path){
                   nrow(simultaneous)))
   
   
-  return(simultaneous)
+  # Generate export-ready dataset -------------------------------------------
+  
+  simul_clean <- simultaneous %>%
+    left_join(x = .,
+              y = wqp_metadata %>%
+                select(MonitoringLocationIdentifier, lat, lon,
+                       type = ResolvedMonitoringLocationTypeName),
+              by = c("SiteID" = "MonitoringLocationIdentifier",
+                     "lat", "lon")) %>%
+    select(SiteID, type, date, lat, lon, chla = mean_chla, doc = mean_doc,
+           secchi = mean_sdd, tss = mean_tss) %>%
+    distinct()
+  
+  
+  return(simul_clean)
   
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

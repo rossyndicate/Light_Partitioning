@@ -199,7 +199,9 @@ harmonize_doc <- function(raw_doc, p_codes){
   doc_harmonized_units <- doc_approx_added %>%
     inner_join(unit_conversion_table, by = 'units') %>%
     mutate(harmonized_value = (value_numeric * conversion) / 1000,
-           harmonized_unit = 'mg/L')
+           harmonized_unit = 'mg/L') %>%
+    # MR limit
+    filter(harmonized_value < 50)
   
   # How many records removed due to values?
   print(

@@ -1,0 +1,106 @@
+---
+title: "Light partitioning modeling report"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+```{r}
+tar_load(simultaneous_data)
+tar_load(simul_vis_gg)
+```
+
+### Preview of simultaneous records:
+```{r}
+simultaneous_data
+```
+
+<br>
+
+#### Record locations
+```{r}
+simul_vis_gg
+```
+
+### Modeling
+```{r}
+range <- 234
+```
+
+```{r}
+# Couldn't think of a more clever way to multiply
+# chla by the range of values, so just made
+# dataframe 4 times bigger with new column called ratio. 
+nap_test <- expand_grid(simultaneous_data, chl_ratio = range) %>%
+  mutate(power = ifelse(chl_ratio == 234, 0.57, 1),
+         chla_biomass = exp(log(chl_ratio / 1000) + log(chla) * power),
+         tss_dead = tss - chla_biomass)
+```
+
+```{r}
+nap_test %>%
+  #Remove negatives and very small numbers (ug/L of sediment is basically zero)
+  filter(tss_dead > 0.001) %>%
+  # sample_frac(0.1) %>%
+  ggplot(., aes(chla,tss_dead,color = type)) +
+  facet_wrap(~chl_ratio) + 
+  geom_point() + 
+  scale_x_log10() + 
+  scale_y_log10() + 
+  stat_poly_eq() + 
+  ggthemes::theme_few() + 
+  scale_color_manual(values = c('seagreen3','skyblue3','saddlebrown'))
+```
+
+```{r}
+nap_est <- nap_test %>%
+  filter(tss_dead > 0.001) %>%
+  mutate(secchi = ifelse(secchi < 0.01,0.01,secchi),
+         kd = (1/(secchi))) 
+```
+
+```{r}
+model <- lm(kd ~ tss_dead + doc + chla, data = nap_est)
+
+nap_resid <- nap_est %>%
+  mutate(residuals = model$residuals,
+         pred = model$fitted.values)
+
+print(paste0("Model RMSE: ", round(rmse(nap_resid$kd, nap_resid$pred), 2)))
+
+print(paste0("Model adj. R^2: ", round(unlist(summary(model)["adj.r.squared"][1]), 2)))
+```
+
+```{r include=FALSE, eval=FALSE}
+nap_est %>%
+  mutate(residuals = model$residuals,
+         pred = model$fitted.values,
+         ratio_rmse = paste('ratio =', chl_ratio, ', RMSE =', round(rmse(kd, pred), 3))) %>%
+  sample_frac(0.1) %>%
+  ggplot(., aes(kd,pred)) + 
+  geom_point(shape = 1) + 
+  facet_wrap(~ratio_rmse) + 
+  ggthemes::theme_few() + 
+  xlab('kd (1/secchi)') +
+  ylab('predicted kd') +
+  scale_x_log10() + 
+  scale_y_log10() +
+  stat_smooth(method = 'lm',se = F) +
+  geom_abline(intercept = 0, slope = 1, col = 'red') 
+```
+
+
+<!-- ```{r} -->
+<!-- nap_resid %>% -->
+<!--   sample_frac(0.1) %>% -->
+<!--   ggplot(., aes(kd,pred)) +  -->
+<!--   geom_point(shape = 1) +  -->
+<!--   facet_wrap(~ratio_rmse) +  -->
+<!--   ggthemes::theme_few() +  -->
+<!--   xlab('kd (1.4/secchi)') + -->
+<!--   ylab('predicted kd') + -->
+<!--   scale_x_log10() +  -->
+<!--   scale_y_log10() + -->
+<!--   stat_smooth(method = 'lm',se = F) + -->
+<!--   geom_abline(intercept = 0, slope = 1, col = 'red')  -->
+<!-- ``` -->
+
