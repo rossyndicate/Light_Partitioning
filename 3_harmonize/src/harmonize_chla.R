@@ -251,12 +251,10 @@ harmonize_chla <- function(raw_chla, p_codes, chla_analytical_method_matchup){
     inner_join(x = .,
                y = unit_conversion_table,
                by = "units") %>%
-    mutate(harmonized_parameter = "chl.a",
-           harmonized_value = value_numeric * conversion,
+    mutate(harmonized_value = value_numeric * conversion,
            harmonized_unit = "ug/L") %>%
-    # Temporary limits 
-    filter(harmonized_value <= 1e6,
-           harmonized_value >= 0)
+    # MR limit 
+    filter(harmonized_value < 1000)
   
   # How many records removed due to limits on values?
   print(
@@ -284,7 +282,7 @@ harmonize_chla <- function(raw_chla, p_codes, chla_analytical_method_matchup){
   )
   
   converted_depth_units_chla <- converted_units_chla %>%
-    inner_join(x = .,
+    left_join(x = .,
                y = depth_unit_conversion_table,
                by = c("sample_depth_unit" = "depth_units")) %>%
     mutate(harmonized_depth_value = as.numeric(sample_depth) * depth_conversion,
@@ -293,7 +291,9 @@ harmonize_chla <- function(raw_chla, p_codes, chla_analytical_method_matchup){
     # numeric value is within +/-2m OR the raw character version indicates something
     # similar:
     filter(abs(harmonized_depth_value) <= 2 |
-             sample_depth %in% c("0-2", "0-0.5"))
+             sample_depth %in% c("0-2", "0-0.5")|
+             # Don't want to lose all the NA depth records
+             is.na(sample_depth))
   
   # How many records removed due to limits on depth?
   print(
