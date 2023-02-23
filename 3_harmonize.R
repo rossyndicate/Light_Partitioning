@@ -145,7 +145,8 @@ p3_targets_list <- list(
                              harmonized_sdd),
                       .f = ~ read_feather(.x) %>%
                         select(SiteID, date, lat, lon,
-                               harmonized_parameter = parameter, orig_parameter))
+                               harmonized_parameter = parameter, orig_parameter,
+                               analytical_method))
              },
              packages = c("tidyverse", "feather"))
   

@@ -138,11 +138,32 @@ p4_targets_list <- list(
   # simul_vis above is not working
   tar_target(simul_vis_gg,
              {
-               unique_simul %>%
+               
+               plot_data <- unique_simul %>%
+                 # Non-deprecated version of crs 2163
+                 st_transform(crs = 9311)
+               
+               state_selection <- states() %>%
+                 filter(!NAME %in% c("Alaska", "Hawaii", "American Samoa",
+                                     "Guam", "Puerto Rico",
+                                     "United States Virgin Islands",
+                                     "Commonwealth of the Northern Mariana Islands")) %>%
+                 st_transform(crs = 9311)
+               
+               plot_data %>%
                  ggplot() +
-                 geom_sf(data = states()) +
-                 geom_sf() +
-                 coord_sf(xlim = c(-170, -60), ylim = c(70, 25)) +
+                 geom_sf(data = state_selection) +
+                 geom_hex(data = bind_cols(as_tibble(plot_data),
+                                           st_coordinates(plot_data)),
+                          aes(x = X, y = Y),
+                          alpha = 0.85) +
+                 xlab(NULL) +
+                 ylab(NULL) +
+                 coord_sf(xlim = c(min(st_coordinates(state_selection)[,"X"]),
+                                   max(st_coordinates(state_selection)[,"X"])),
+                          ylim = c(min(st_coordinates(state_selection)[,"Y"]),
+                                   max(st_coordinates(state_selection)[,"Y"]))) +
+                 scale_fill_viridis_c("Record count") +
                  theme_bw()
              },
              packages = c("tidyverse", "sf", "tigris")),
@@ -170,7 +191,12 @@ p4_targets_list <- list(
                  scale_color_manual(values = c('seagreen3','skyblue3','saddlebrown'))            
              },
              packages = c("tidyverse", "GGally", "ggthemes")
-  )
+  ),
+  
+  tar_render(model_report,
+             "4_analysis/src/model_report.Rmd",
+             packages = c("tidyverse", "lubridate", "feather", "ggpmisc", "Metrics",
+                          "broom", "ggtern"))
   
   
 )
