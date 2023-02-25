@@ -1,5 +1,6 @@
 # Source the functions that will be used to build the targets in p3_targets_list
 source("3_harmonize/src/clean_wqp_data.R")
+source("3_harmonize/src/clean_wqp_data_strict.R")
 source("3_harmonize/src/create_match_table.R")
 source("3_harmonize/src/format_columns.R")
 source("3_harmonize/src/get_p_codes.R")
@@ -8,6 +9,10 @@ source("3_harmonize/src/harmonize_sdd.R")
 source("3_harmonize/src/harmonize_tss.R")
 source("3_harmonize/src/harmonize_chla.R")
 source("3_harmonize/src/harmonize_doc.R")
+source("3_harmonize/src/harmonize_sdd_strict.R")
+source("3_harmonize/src/harmonize_tss_strict.R")
+source("3_harmonize/src/harmonize_chla_strict.R")
+source("3_harmonize/src/harmonize_doc_strict.R")
 source("3_harmonize/src/find_simultaneous.R")
 
 
@@ -43,6 +48,15 @@ p3_targets_list <- list(
                             site_data = p2_site_counts,
                             match_table = wqp_col_match, 
                             wqp_metadata = p1_wqp_inventory_aoi),
+             packages = c("tidyverse", "lubridate"),
+             format = "feather"),
+  
+  tar_target(wqp_data_aoi_ready_strict,
+             clean_wqp_data_strict(wqp_data = p3_wqp_data_aoi_formatted,
+                                   char_names_crosswalk = p1_char_names_crosswalk,
+                                   site_data = p2_site_counts,
+                                   match_table = wqp_col_match, 
+                                   wqp_metadata = p1_wqp_inventory_aoi),
              packages = c("tidyverse", "lubridate"),
              format = "feather"),
   
@@ -97,20 +111,33 @@ p3_targets_list <- list(
   # Harmonization process ---------------------------------------------------
   
   tar_target(harmonized_tss,
-             harmonize_tss(raw_tss = wqp_data_aoi_ready %>%
+             harmonize_tss(raw_tss = wqp_data_aoi_ready_strict %>%
                              filter(parameter == "tss"),
                            p_codes = p_codes),
              packages = c("tidyverse", "lubridate", "pander", "feather")),
   
+  tar_target(harmonized_tss_strict,
+             harmonize_tss_strict(raw_tss = wqp_data_aoi_ready_strict %>%
+                                    filter(parameter == "tss"),
+                                  p_codes = p_codes),
+             packages = c("tidyverse", "lubridate", "pander", "feather")),
+  
   tar_target(harmonized_chla,
-             harmonize_chla(raw_chla = wqp_data_aoi_ready %>%
+             harmonize_chla(raw_chla = wqp_data_aoi_ready_strict %>%
                               filter(parameter == "chlorophyll"),
                             p_codes = p_codes,
                             chla_analytical_method_matchup = chla_analytical_method_matchup),
              packages = c("tidyverse", "lubridate", "feather")),
   
+  tar_target(harmonized_chla_strict,
+             harmonize_chla_strict(raw_chla = wqp_data_aoi_ready_strict %>%
+                                     filter(parameter == "chlorophyll"),
+                                   p_codes = p_codes,
+                                   chla_analytical_method_matchup = chla_analytical_method_matchup),
+             packages = c("tidyverse", "lubridate", "feather")),
+  
   tar_target(harmonized_sdd,
-             harmonize_sdd(raw_sdd = wqp_data_aoi_ready %>%
+             harmonize_sdd(raw_sdd = wqp_data_aoi_ready_strict %>%
                              filter(parameter == "secchi"),
                            p_codes = p_codes,
                            sdd_analytical_method_matchup = sdd_analytical_method_matchup,
@@ -118,10 +145,25 @@ p3_targets_list <- list(
                            sdd_equipment_matchup = sdd_equipment_matchup),
              packages = c("tidyverse", "lubridate", "feather")),
   
+  tar_target(harmonized_sdd_strict,
+             harmonize_sdd_strict(raw_sdd = wqp_data_aoi_ready_strict %>%
+                                    filter(parameter == "secchi"),
+                                  p_codes = p_codes,
+                                  sdd_analytical_method_matchup = sdd_analytical_method_matchup,
+                                  sdd_sample_method_matchup = sdd_sample_method_matchup,
+                                  sdd_equipment_matchup = sdd_equipment_matchup),
+             packages = c("tidyverse", "lubridate", "feather")),
+  
   tar_target(harmonized_doc,
-             harmonize_doc(raw_doc = wqp_data_aoi_ready %>%
+             harmonize_doc(raw_doc = wqp_data_aoi_ready_strict %>%
                              filter(parameter == "doc"),
                            p_codes = p_codes),
+             packages = c("tidyverse", "lubridate", "feather")),
+  
+  tar_target(harmonized_doc_strict,
+             harmonize_doc_strict(raw_doc = wqp_data_aoi_ready_strict %>%
+                                    filter(parameter == "doc"),
+                                  p_codes = p_codes),
              packages = c("tidyverse", "lubridate", "feather")),
   
   
@@ -132,6 +174,14 @@ p3_targets_list <- list(
                                doc_path = harmonized_doc,
                                sdd_path = harmonized_sdd,
                                tss_path = harmonized_tss,
+                               wqp_metadata = p1_wqp_inventory_aoi),
+             packages = c("tidyverse", "lubridate", "feather")),
+  
+  tar_target(simultaneous_data_strict,
+             find_simultaneous(chla_path = harmonized_chla_strict,
+                               doc_path = harmonized_doc_strict,
+                               sdd_path = harmonized_sdd_strict,
+                               tss_path = harmonized_tss_strict,
                                wqp_metadata = p1_wqp_inventory_aoi),
              packages = c("tidyverse", "lubridate", "feather")),
   
