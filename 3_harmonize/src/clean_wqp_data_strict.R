@@ -34,21 +34,21 @@
 #' the Water Quality Portal, where each row represents a unique data record.
 #' 
 
-clean_wqp_data <- function(wqp_data,
-                           char_names_crosswalk,
-                           site_data,
-                           match_table,
-                           wqp_metadata,
-                           commenttext_missing = c('analysis lost', 'not analyzed',
-                                                   'not recorded', 'not collected',
-                                                   'no measurement taken'),
-                           duplicate_definition = c('OrganizationIdentifier',
-                                                    'MonitoringLocationIdentifier',
-                                                    'ActivityStartDate',
-                                                    'ActivityStartTime.Time',
-                                                    'CharacteristicName',
-                                                    'ResultSampleFractionText'),
-                           remove_duplicated_rows = TRUE){
+clean_wqp_data_strict <- function(wqp_data,
+                                  char_names_crosswalk,
+                                  site_data,
+                                  match_table,
+                                  wqp_metadata,
+                                  commenttext_missing = c('analysis lost', 'not analyzed',
+                                                          'not recorded', 'not collected',
+                                                          'no measurement taken'),
+                                  duplicate_definition = c('OrganizationIdentifier',
+                                                           'MonitoringLocationIdentifier',
+                                                           'ActivityStartDate',
+                                                           'ActivityStartTime.Time',
+                                                           'CharacteristicName',
+                                                           'ResultSampleFractionText'),
+                                  remove_duplicated_rows = TRUE){
   
   # Clean data and assign flags if applicable
   wqp_data_no_dup <- wqp_data %>%
@@ -78,13 +78,12 @@ clean_wqp_data <- function(wqp_data,
   
   
   # Remove records flagged as having missing results
-  # wqp_data_no_missing <- wqp_data_no_dup %>%
-  #   filter(!flag_missing_result)
-  # 
+  wqp_data_no_missing <- wqp_data_no_dup %>%
+    filter(!flag_missing_result)
+  
   # # Inform the user what we found for missing rows
-  # message(sprintf(paste0("Removed %s records with missing results."), 
-  #                 nrow(wqp_data_no_dup) - nrow(wqp_data_no_missing)))
-  wqp_data_no_missing <- wqp_data_no_dup
+  message(sprintf(paste0("Removed %s records with missing results."),
+                  nrow(wqp_data_no_dup) - nrow(wqp_data_no_missing)))
   
   # Remove records that don't meet needs for status
   wqp_data_pass_status <- wqp_data_no_missing %>%
