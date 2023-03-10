@@ -174,7 +174,9 @@ p3_targets_list <- list(
   tar_target(documented_drops,
              map_df(.x = c(wqp_data_aoi_ready_strict$compiled_drops_path,
                            harmonized_chla_strict$compiled_drops_path,
-                           harmonized_sdd_strict$compiled_drops_path),
+                           harmonized_sdd_strict$compiled_drops_path,
+                           harmonized_doc_strict$compiled_drops_path,
+                           harmonized_tss_strict$compiled_drops_path),
                     .f = read_csv)),
   
   

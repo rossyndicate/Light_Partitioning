@@ -3,7 +3,7 @@ harmonize_doc_strict <- function(raw_doc, p_codes){
   
   # Minor data prep ---------------------------------------------------------
   
-  raw_doc <- raw_doc %>% 
+  doc <- raw_doc %>% 
     # Link up USGS p-codes. and their common names can be useful for method lumping:
     left_join(x = ., y = p_codes, by = "parm_cd") %>%
     filter(
@@ -12,10 +12,22 @@ harmonize_doc_strict <- function(raw_doc, p_codes){
     # Index for being able to track each sample
     rowid_to_column(.,"index")
   
+  # Record info on any dropped rows  
+  dropped_media <- tibble(
+    step = "doc harmonization",
+    reason = "Filtered for only water media",
+    number_dropped = nrow(raw_doc) - nrow(doc),
+    n_rows = nrow(doc),
+    order = 1
+  )
+  
+  rm(raw_doc)
+  gc()
+  
   
   # Remove fails ------------------------------------------------------------
   
-  doc_fails_removed <- raw_doc %>%
+  doc_fails_removed <- doc %>%
     # No failure-related field comments, slightly different list of words than
     # lab and result list (not including things that could be used to describe
     # field conditions like "warm", "ice", etc.):
@@ -83,9 +95,16 @@ harmonize_doc_strict <- function(raw_doc, p_codes){
   print(
     paste0(
       "Rows removed due to fails, missing data, etc.: ",
-      nrow(raw_doc) - nrow(doc_fails_removed)
+      nrow(doc) - nrow(doc_fails_removed)
     )
   )
+  
+  dropped_fails <- tibble(
+    step = "doc harmonization",
+    reason = "Dropped rows indicating fails, missing data, etc.",
+    number_dropped = nrow(doc) - nrow(doc_fails_removed),
+    n_rows = nrow(doc_fails_removed),
+    order = 2)
   
   
   # Clean up MDLs -----------------------------------------------------------
@@ -139,6 +158,14 @@ harmonize_doc_strict <- function(raw_doc, p_codes){
            harmonized_comments = ifelse(index %in% mdl_updates$index,
                                         "Approximated using the EPA's MDL method.", NA))
   
+  dropped_mdls <- tibble(
+    step = "doc harmonization",
+    reason = "Dropped rows while cleaning MDLs",
+    number_dropped = nrow(doc_fails_removed) - nrow(doc_mdls_added),
+    n_rows = nrow(doc_mdls_added),
+    order = 3
+  )
+  
   
   # Clean up approximated values --------------------------------------------
   
@@ -167,7 +194,7 @@ harmonize_doc_strict <- function(raw_doc, p_codes){
   
   print(
     paste(
-      round((nrow(doc_approx)) / nrow(raw_doc) * 100, 3),
+      round((nrow(doc_approx)) / nrow(doc) * 100, 3),
       '% of samples had values listed as approximated'
     )
   )
@@ -181,6 +208,14 @@ harmonize_doc_strict <- function(raw_doc, p_codes){
            harmonized_comments = ifelse(index %in% doc_approx$index,
                                         'Value identified as "approximated" by organization.',
                                         harmonized_comments))
+  
+  dropped_approximates <- tibble(
+    step = "doc harmonization",
+    reason = "Dropped rows while cleaning approximate values",
+    number_dropped = nrow(doc_mdls_added) - nrow(doc_approx_added),
+    n_rows = nrow(doc_approx_added),
+    order = 4
+  )
   
   
   # Clean up "greater than" values ------------------------------------------
@@ -209,6 +244,14 @@ harmonize_doc_strict <- function(raw_doc, p_codes){
       "Rows removed while harmonizing units: ",
       nrow(doc_approx_added) - nrow(doc_harmonized_units)
     )
+  )
+  
+  dropped_harmonization <- tibble(
+    step = "doc harmonization",
+    reason = "Dropped rows while harmonizing units",
+    number_dropped = nrow(doc_approx_added) - nrow(doc_harmonized_units),
+    n_rows = nrow(doc_harmonized_units),
+    order = 5
   )
   
   
@@ -344,6 +387,14 @@ harmonize_doc_strict <- function(raw_doc, p_codes){
     )
   )
   
+  dropped_methods <- tibble(
+    step = "doc harmonization",
+    reason = "Dropped rows while aggregating analytical methods",
+    number_dropped = nrow(doc_harmonized_units) - nrow(doc_filter_tiers),
+    n_rows = nrow(doc_filter_tiers),
+    order = 6
+  )
+  
   
   # Filter fractions --------------------------------------------------------
   
@@ -372,14 +423,33 @@ harmonize_doc_strict <- function(raw_doc, p_codes){
     )
   )
   
+  dropped_fractions <- tibble(
+    step = "doc harmonization",
+    reason = "Dropped rows while filtering fraction types",
+    number_dropped = nrow(doc_filter_tiers) - nrow(doc_harmonized),
+    n_rows = nrow(doc_harmonized),
+    order = 7
+  )
+  
   
   # Export ------------------------------------------------------------------
   
+  
+  # Record of all steps where rows were dropped, why, and how many
+  compiled_dropped <- bind_rows(dropped_approximates, dropped_fails,
+                                dropped_fractions, dropped_harmonization,
+                                dropped_mdls, dropped_media, dropped_methods)
+  
+  documented_drops_out_path <- "3_harmonize/out/harmonize_doc_strict_dropped_metadata.csv"
+  
+  write_csv(x = compiled_dropped,
+            file = documented_drops_out_path)
+  
   # Export in memory-friendly way
-  out_path <- "3_harmonize/out/harmonized_doc_strict.feather"
+  data_out_path <- "3_harmonize/out/harmonized_doc_strict.feather"
   
   write_feather(doc_harmonized,
-                out_path)
+                data_out_path)
   
   # Final dataset length:
   print(
@@ -389,6 +459,8 @@ harmonize_doc_strict <- function(raw_doc, p_codes){
     )
   )
   
-  return(out_path)
+  return(list(
+    harmonized_doc_path = data_out_path,
+    compiled_drops_path = documented_drops_out_path))  
   
 }
