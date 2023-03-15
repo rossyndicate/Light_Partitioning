@@ -14,6 +14,7 @@ source("3_harmonize/src/harmonize_tss_strict.R")
 source("3_harmonize/src/harmonize_chla_strict.R")
 source("3_harmonize/src/harmonize_doc_strict.R")
 source("3_harmonize/src/find_simultaneous.R")
+source("3_harmonize/src/change_ext.R")
 
 
 p3_targets_list <- list(
@@ -211,7 +212,60 @@ p3_targets_list <- list(
                                harmonized_parameter = parameter, orig_parameter,
                                analytical_method))
              },
-             packages = c("tidyverse", "feather"))
+             packages = c("tidyverse", "feather")),
+  
+  
+  # Create bookdown documentation -------------------------------------------
+  
+  tar_file(bookdown_index,
+           "bookdown_rmds/index.Rmd"),
+  
+  tar_file(pre_harmonization_documentation_file,
+           "bookdown_rmds/01-preharmonization.Rmd"),
+  
+  tar_target(
+    pre_harmonization_documentation,
+    rmarkdown::render(pre_harmonization_documentation_file,
+                      output_file = "01-preharmonization",
+                      output_dir = "bookdown_rmds",
+                      params = list(metadata = documented_drops)) %>%
+      change_ext(inext = "md", outext = "Rmd"),
+    format = "file"
+  ),
+  
+  
+  tar_target(book,
+             render_book(input = c(bookdown_index, pre_harmonization_documentation)),
+             packages = "bookdown")
+  
+  
+  
+  
+  
+  
+  
   
   
 )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
