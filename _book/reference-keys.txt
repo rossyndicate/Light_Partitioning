@@ -1,0 +1,14 @@
+light-partitioning
+pre-harmonization-decision-process
+chlorophyll-harmonization-process-strict-version
+initial-dataset
+filter-for-water-media
+keep-only-chlorophyll-parameters
+remove-fails-and-other-missing-data
+clean-mdls
+clean-approximate-values
+clean-values-with-greater-than-data
+harmonize-record-units
+clean-depth-data
+filter-based-on-analytical-method
+filter-based-on-fraction-type
