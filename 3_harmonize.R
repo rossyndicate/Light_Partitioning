@@ -178,7 +178,8 @@ p3_targets_list <- list(
                            harmonized_sdd_strict$compiled_drops_path,
                            harmonized_doc_strict$compiled_drops_path,
                            harmonized_tss_strict$compiled_drops_path),
-                    .f = read_csv)),
+                    .f = read_csv),
+             cue = tar_cue("always")),
   
   
   # Find simultaneous records -----------------------------------------------
@@ -192,10 +193,10 @@ p3_targets_list <- list(
              packages = c("tidyverse", "lubridate", "feather")),
   
   tar_target(simultaneous_data_strict,
-             find_simultaneous(chla_path = harmonized_chla_strict,
-                               doc_path = harmonized_doc_strict,
-                               sdd_path = harmonized_sdd_strict,
-                               tss_path = harmonized_tss_strict,
+             find_simultaneous(chla_path = harmonized_chla_strict$harmonized_chla_path,
+                               doc_path = harmonized_doc_strict$harmonized_doc_path,
+                               sdd_path = harmonized_sdd_strict$harmonized_sdd_path,
+                               tss_path = harmonized_tss_strict$harmonized_tss_path,
                                wqp_metadata = p1_wqp_inventory_aoi),
              packages = c("tidyverse", "lubridate", "feather")),
   
@@ -217,33 +218,86 @@ p3_targets_list <- list(
   
   # Create bookdown documentation -------------------------------------------
   
-  tar_file(bookdown_index,
-           "bookdown_rmds/index.Rmd"),
+  tar_file(download_rmd,
+           "bookdown_raw/01_download.Rmd"),
   
-  tar_file(pre_harmonization_documentation_file,
-           "bookdown_rmds/01-preharmonization.Rmd"),
+  tar_file(pre_harmonization_rmd,
+           "bookdown_raw/02_preharmonization.Rmd"),
+  
+  tar_file(chla_harmonization_rmd,
+           "bookdown_raw/03_chla_harmonization.Rmd"),
+  
+  tar_file(doc_harmonization_rmd,
+           "bookdown_raw/04_doc_harmonization.Rmd"),
   
   tar_target(
-    pre_harmonization_documentation,
-    rmarkdown::render(pre_harmonization_documentation_file,
-                      output_file = "01-preharmonization",
-                      output_dir = "bookdown_rmds",
-                      params = list(metadata = documented_drops)) %>%
-      change_ext(inext = "md", outext = "Rmd"),
-    format = "file"
+    download_report,
+    rmarkdown::render(
+      download_rmd,
+      params = list(
+        site_counts = p2_site_counts,
+        global_grid = p1_global_grid),
+      output_file = "01_download",
+      output_dir = 'chapters') %>%
+      change_ext(inext = 'md', outext = 'Rmd'),
+    format = 'file',
+    cue = tar_cue("always"),
+    packages = c("tidyverse", "sf", "tigris")
   ),
   
+  tar_target(
+    preharmonization_report,
+    rmarkdown::render(
+      pre_harmonization_rmd,
+      params = list(
+        documented_drops = documented_drops),
+      output_file = "02_preharmonization",
+      output_dir = 'chapters') %>%
+      change_ext(inext = 'md', outext = 'Rmd'),
+    format = 'file',
+    cue = tar_cue("always"),
+    packages = c("tidyverse", "bookdown", "ggrepel", "viridis", "kableExtra")
+  ),
   
-  tar_target(book,
-             render_book(input = c(bookdown_index, pre_harmonization_documentation)),
-             packages = "bookdown")
+  tar_target(
+    chla_harmonization_report,
+    rmarkdown::render(
+      chla_harmonization_rmd,
+      params = list(
+        documented_drops = documented_drops),
+      output_file = "03_chla_harmonization",
+      output_dir = 'chapters') %>%
+      change_ext(inext = 'md', outext = 'Rmd'),
+    format = 'file',
+    cue = tar_cue("always"),
+    packages = c("tidyverse", "bookdown", "ggrepel", "viridis", "kableExtra")
+  ),
   
+  tar_target(
+    doc_harmonization_report,
+    rmarkdown::render(
+      doc_harmonization_rmd,
+      params = list(
+        documented_drops = documented_drops),
+      output_file = "04_doc_harmonization",
+      output_dir = 'chapters') %>%
+      change_ext(inext = 'md', outext = 'Rmd'),
+    format = 'file',
+    cue = tar_cue("always"),
+    packages = c("tidyverse", "bookdown", "ggrepel", "viridis", "kableExtra")
+  ),
   
+  tar_file(index, 'index.Rmd'),
   
-  
-  
-  
-  
+  tar_target(
+    book,
+    render_with_deps(index = index,
+                     deps = c(download_report,
+                              preharmonization_report,
+                              chla_harmonization_report,
+                              doc_harmonization_report)),
+    cue = tar_cue("always")
+  )
   
   
 )

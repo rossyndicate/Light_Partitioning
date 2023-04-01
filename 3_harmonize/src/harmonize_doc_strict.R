@@ -1,6 +1,16 @@
 
 harmonize_doc_strict <- function(raw_doc, p_codes){
   
+  # Starting values for dataset
+  starting_data <- tibble(
+    step = "doc harmonization",
+    reason = "Starting dataset",
+    short_reason = "Starting",
+    number_dropped = 0,
+    n_rows = nrow(raw_doc),
+    order = 0
+  )
+  
   # Minor data prep ---------------------------------------------------------
   
   doc <- raw_doc %>% 
@@ -16,6 +26,7 @@ harmonize_doc_strict <- function(raw_doc, p_codes){
   dropped_media <- tibble(
     step = "doc harmonization",
     reason = "Filtered for only water media",
+    short_reason = "Water media",
     number_dropped = nrow(raw_doc) - nrow(doc),
     n_rows = nrow(doc),
     order = 1
@@ -102,6 +113,7 @@ harmonize_doc_strict <- function(raw_doc, p_codes){
   dropped_fails <- tibble(
     step = "doc harmonization",
     reason = "Dropped rows indicating fails, missing data, etc.",
+    short_reason = "Fails, etc.",
     number_dropped = nrow(doc) - nrow(doc_fails_removed),
     n_rows = nrow(doc_fails_removed),
     order = 2)
@@ -134,13 +146,13 @@ harmonize_doc_strict <- function(raw_doc, p_codes){
       half = as.numeric(mdl_vals) / 2)
   
   # Using the EPA standard for non-detects, select a random number between zero and HALF the MDL:
-  mdl_updates$epa_value <- with(mdl_updates, runif(nrow(mdl_updates), 0, half))
-  mdl_updates$epa_value[is.nan(mdl_updates$epa_value)] <- NA
+  mdl_updates$std_value <- with(mdl_updates, runif(nrow(mdl_updates), 0, half))
+  mdl_updates$std_value[is.nan(mdl_updates$std_value)] <- NA
   
   # Keep important data
   mdl_updates <- mdl_updates %>%
-    select(index, epa_value, mdl_vals, mdl_units) %>%
-    filter(!is.na(epa_value))
+    select(index, std_value, mdl_vals, mdl_units) %>%
+    filter(!is.na(std_value))
   
   
   print(
@@ -153,7 +165,7 @@ harmonize_doc_strict <- function(raw_doc, p_codes){
   # Replace "harmonized_value" field with these new values
   doc_mdls_added <- doc_fails_removed %>%
     left_join(x = ., y = mdl_updates, by = "index") %>%
-    mutate(harmonized_value = ifelse(index %in% mdl_updates$index, epa_value, value_numeric),
+    mutate(harmonized_value = ifelse(index %in% mdl_updates$index, std_value, value_numeric),
            harmonized_units = ifelse(index %in% mdl_updates$index, mdl_units, units),
            harmonized_comments = ifelse(index %in% mdl_updates$index,
                                         "Approximated using the EPA's MDL method.", NA))
@@ -161,6 +173,7 @@ harmonize_doc_strict <- function(raw_doc, p_codes){
   dropped_mdls <- tibble(
     step = "doc harmonization",
     reason = "Dropped rows while cleaning MDLs",
+    short_reason = "Clean MDLs",
     number_dropped = nrow(doc_fails_removed) - nrow(doc_mdls_added),
     n_rows = nrow(doc_mdls_added),
     order = 3
@@ -212,6 +225,7 @@ harmonize_doc_strict <- function(raw_doc, p_codes){
   dropped_approximates <- tibble(
     step = "doc harmonization",
     reason = "Dropped rows while cleaning approximate values",
+    short_reason = "Clean approximates",
     number_dropped = nrow(doc_mdls_added) - nrow(doc_approx_added),
     n_rows = nrow(doc_approx_added),
     order = 4
@@ -249,6 +263,7 @@ harmonize_doc_strict <- function(raw_doc, p_codes){
   dropped_harmonization <- tibble(
     step = "doc harmonization",
     reason = "Dropped rows while harmonizing units",
+    short_reason = "Harmonize units",
     number_dropped = nrow(doc_approx_added) - nrow(doc_harmonized_units),
     n_rows = nrow(doc_harmonized_units),
     order = 5
@@ -390,6 +405,7 @@ harmonize_doc_strict <- function(raw_doc, p_codes){
   dropped_methods <- tibble(
     step = "doc harmonization",
     reason = "Dropped rows while aggregating analytical methods",
+    short_reason = "Analytical methods",
     number_dropped = nrow(doc_harmonized_units) - nrow(doc_filter_tiers),
     n_rows = nrow(doc_filter_tiers),
     order = 6
@@ -426,6 +442,7 @@ harmonize_doc_strict <- function(raw_doc, p_codes){
   dropped_fractions <- tibble(
     step = "doc harmonization",
     reason = "Dropped rows while filtering fraction types",
+    short_reason = "Fraction types",
     number_dropped = nrow(doc_filter_tiers) - nrow(doc_harmonized),
     n_rows = nrow(doc_harmonized),
     order = 7
@@ -436,7 +453,7 @@ harmonize_doc_strict <- function(raw_doc, p_codes){
   
   
   # Record of all steps where rows were dropped, why, and how many
-  compiled_dropped <- bind_rows(dropped_approximates, dropped_fails,
+  compiled_dropped <- bind_rows(starting_data, dropped_approximates, dropped_fails,
                                 dropped_fractions, dropped_harmonization,
                                 dropped_mdls, dropped_media, dropped_methods)
   

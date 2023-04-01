@@ -6,7 +6,8 @@ library(tarchetypes)
 
 # Set target options:
 tar_option_set(
-  packages = c("tidyverse")
+  packages = c("tidyverse"),
+  error = "continue"
 )
 
 # Run the R scripts with custom functions:
@@ -41,7 +42,8 @@ config_targets <- list(
   # omit characteristic names or include others, to change top-level parameter names,
   # or to customize parameter groupings. 
   tar_target(param_groups_select,
-             c("chlorophyll", "secchi", "doc", "tss")),
+             c("chlorophyll", "secchi", "doc", "tss"#, "temperature"
+               )),
   
   
   # WQP inventory -----------------------------------------------------------

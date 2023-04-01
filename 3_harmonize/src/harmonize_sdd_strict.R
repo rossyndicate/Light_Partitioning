@@ -4,6 +4,16 @@ harmonize_sdd_strict <- function(raw_sdd, p_codes,
                                  sdd_sample_method_matchup,
                                  sdd_equipment_matchup){
   
+  # Starting values for dataset
+  starting_data <- tibble(
+    step = "sdd harmonization",
+    reason = "Starting dataset",
+    short_reason = "Start",
+    number_dropped = 0,
+    n_rows = nrow(raw_sdd),
+    order = 0
+  )
+  
   # Minor data prep ---------------------------------------------------------
   
   # First step is to read in the data and do basic formatting and filtering
@@ -20,6 +30,7 @@ harmonize_sdd_strict <- function(raw_sdd, p_codes,
   dropped_media <- tibble(
     step = "sdd harmonization",
     reason = "Filtered for only water media",
+    short_reason = "Water media",
     number_dropped = nrow(raw_sdd) - nrow(sdd),
     n_rows = nrow(sdd),
     order = 1
@@ -101,6 +112,7 @@ harmonize_sdd_strict <- function(raw_sdd, p_codes,
   dropped_fails <- tibble(
     step = "sdd harmonization",
     reason = "Dropped rows indicating fails, missing data, etc.",
+    short_reason = "Fails, etc.",
     number_dropped = nrow(sdd) - nrow(sdd_fails_removed),
     n_rows = nrow(sdd_fails_removed),
     order = 2)
@@ -133,13 +145,13 @@ harmonize_sdd_strict <- function(raw_sdd, p_codes,
       half = as.numeric(mdl_vals) / 2)
   
   # Using the EPA standard for non-detects, select a random number between zero and HALF the MDL:
-  mdl_updates$epa_value <- with(mdl_updates, runif(nrow(mdl_updates), 0, half))
-  mdl_updates$epa_value[is.nan(mdl_updates$epa_value)] <- NA
+  mdl_updates$std_value <- with(mdl_updates, runif(nrow(mdl_updates), 0, half))
+  mdl_updates$std_value[is.nan(mdl_updates$std_value)] <- NA
   
   # Keep important data
   mdl_updates <- mdl_updates %>%
-    select(index, epa_value, mdl_vals, mdl_units) %>%
-    filter(!is.na(epa_value))
+    select(index, std_value, mdl_vals, mdl_units) %>%
+    filter(!is.na(std_value))
   
   
   print(
@@ -152,7 +164,7 @@ harmonize_sdd_strict <- function(raw_sdd, p_codes,
   # Replace "harmonized_value" field with these new values
   sdd_mdls_added <- sdd_fails_removed %>%
     left_join(x = ., y = mdl_updates, by = "index") %>%
-    mutate(harmonized_value = ifelse(index %in% mdl_updates$index, epa_value, value_numeric),
+    mutate(harmonized_value = ifelse(index %in% mdl_updates$index, std_value, value_numeric),
            harmonized_units = ifelse(index %in% mdl_updates$index, mdl_units, units),
            harmonized_comments = ifelse(index %in% mdl_updates$index,
                                         "Approximated using the EPA's MDL method.", NA))
@@ -160,6 +172,7 @@ harmonize_sdd_strict <- function(raw_sdd, p_codes,
   dropped_mdls <- tibble(
     step = "sdd harmonization",
     reason = "Dropped rows while cleaning MDLs",
+    short_reason = "Clean MDLs",
     number_dropped = nrow(sdd_fails_removed) - nrow(sdd_mdls_added),
     n_rows = nrow(sdd_mdls_added),
     order = 3
@@ -211,6 +224,7 @@ harmonize_sdd_strict <- function(raw_sdd, p_codes,
   dropped_approximates <- tibble(
     step = "sdd harmonization",
     reason = "Dropped rows while cleaning approximate values",
+    short_reason = "Clean approximates",
     number_dropped = nrow(sdd_mdls_added) - nrow(sdd_approx_added),
     n_rows = nrow(sdd_approx_added),
     order = 4
@@ -255,6 +269,7 @@ harmonize_sdd_strict <- function(raw_sdd, p_codes,
   dropped_greater_than <- tibble(
     step = "sdd harmonization",
     reason = "Dropped rows while cleaning 'greater than' values",
+    short_reason = "Greater thans",
     number_dropped = nrow(sdd_approx_added) - nrow(sdd_harmonized_values),
     n_rows = nrow(sdd_harmonized_values),
     order = 5
@@ -297,6 +312,7 @@ harmonize_sdd_strict <- function(raw_sdd, p_codes,
   dropped_harmonization <- tibble(
     step = "sdd harmonization",
     reason = "Dropped rows while harmonizing units",
+    short_reason = "Harmonize units",
     number_dropped = nrow(sdd_harmonized_values) - nrow(converted_units_sdd),
     n_rows = nrow(converted_units_sdd),
     order = 6
@@ -335,6 +351,7 @@ harmonize_sdd_strict <- function(raw_sdd, p_codes,
   dropped_methods <- tibble(
     step = "sdd harmonization",
     reason = "Dropped rows while aggregating analytical methods",
+    short_reason = "Analytical methods",
     number_dropped = nrow(converted_units_sdd) - nrow(grouped_analytical_methods_sdd),
     n_rows = nrow(grouped_analytical_methods_sdd),
     order = 7
@@ -367,6 +384,7 @@ harmonize_sdd_strict <- function(raw_sdd, p_codes,
   dropped_fractions <- tibble(
     step = "sdd harmonization",
     reason = "Dropped rows while filtering fraction types",
+    short_reason = "Fraction types",
     number_dropped = nrow(grouped_analytical_methods_sdd) - nrow(grouped_fractions_sdd),
     n_rows = nrow(grouped_fractions_sdd),
     order = 8
@@ -398,6 +416,7 @@ harmonize_sdd_strict <- function(raw_sdd, p_codes,
   dropped_sample_methods <- tibble(
     step = "sdd harmonization",
     reason = "Dropped rows while aggregating sample methods",
+    short_reason = "Sample methods",
     number_dropped = nrow(grouped_fractions_sdd) - nrow(grouped_sample_methods_sdd),
     n_rows = nrow(grouped_sample_methods_sdd),
     order = 9
@@ -427,6 +446,7 @@ harmonize_sdd_strict <- function(raw_sdd, p_codes,
   dropped_equipment <- tibble(
     step = "sdd harmonization",
     reason = "Dropped rows while aggregating collection equipment",
+    short_reason = "Collection equipment",
     number_dropped = nrow(grouped_sample_methods_sdd) - nrow(grouped_equipment_sdd),
     n_rows = nrow(grouped_equipment_sdd),
     order = 10
@@ -436,7 +456,7 @@ harmonize_sdd_strict <- function(raw_sdd, p_codes,
   # Export ------------------------------------------------------------------
   
   # Record of all steps where rows were dropped, why, and how many
-  compiled_dropped <- bind_rows(dropped_approximates, dropped_equipment, dropped_fails,
+  compiled_dropped <- bind_rows(starting_data, dropped_approximates, dropped_equipment, dropped_fails,
                                 dropped_fractions, dropped_greater_than,
                                 dropped_harmonization, dropped_mdls,
                                 dropped_media, dropped_methods, dropped_sample_methods)

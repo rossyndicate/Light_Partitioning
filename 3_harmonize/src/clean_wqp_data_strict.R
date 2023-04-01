@@ -50,6 +50,15 @@ clean_wqp_data_strict <- function(wqp_data,
                                                            'ResultSampleFractionText'),
                                   remove_duplicated_rows = TRUE){
   
+  # Starting values for dataset
+  starting_data <- tibble(
+    step = "pre-harmonization",
+    reason = "Starting dataset",
+    short_reason = "Start",
+    number_dropped = 0,
+    n_rows = nrow(wqp_data),
+    order = 0
+  )
   
   # Clean data and assign flags if applicable
   wqp_data_no_dup <- wqp_data %>%
@@ -81,6 +90,7 @@ clean_wqp_data_strict <- function(wqp_data,
   dropped_duplicates <- tibble(
     step = "pre-harmonization",
     reason = "Removed duplicated records",
+    short_reason = "Remove duplicates",
     number_dropped = nrow(wqp_data) - nrow(wqp_data_no_dup),
     n_rows = nrow(wqp_data_no_dup),
     order = 1
@@ -97,6 +107,7 @@ clean_wqp_data_strict <- function(wqp_data,
   dropped_missing <- tibble(
     step = "pre-harmonization",
     reason = "Removed missing results",
+    short_reason = "Remove missing",
     number_dropped = nrow(wqp_data_no_dup) - nrow(wqp_data_no_missing),
     n_rows = nrow(wqp_data_no_missing),
     order = 2
@@ -117,6 +128,7 @@ clean_wqp_data_strict <- function(wqp_data,
   dropped_status <- tibble(
     step = "pre-harmonization",
     reason = "Keep only status = accepted/final/historical/validated/preliminary",
+    short_reason = "Finalized statuses",
     number_dropped = nrow(wqp_data_no_missing) - nrow(wqp_data_pass_status),
     n_rows = nrow(wqp_data_pass_status),
     order = 3
@@ -134,6 +146,7 @@ clean_wqp_data_strict <- function(wqp_data,
   dropped_media <- tibble(
     step = "pre-harmonization",
     reason = "Keep only media = surface water/water/estuary",
+    short_reason = "Media types",
     number_dropped = nrow(wqp_data_pass_status) - nrow(wqp_data_pass_media),
     n_rows = nrow(wqp_data_pass_media),
     order = 4
@@ -165,14 +178,15 @@ clean_wqp_data_strict <- function(wqp_data,
   dropped_location <- tibble(
     step = "pre-harmonization",
     reason = "Keep only location type = estuary/lake, res, impoundment/stream",
+    short_reason = "Location type",
     number_dropped = nrow(wqp_data_pass_media) - nrow(wqp_data_clean),
     n_rows = nrow(wqp_data_clean),
     order = 5
   )
   
   # Record of all steps where rows were dropped, why, and how many
-  compiled_dropped <- bind_rows(dropped_duplicates, dropped_missing, dropped_status,
-                                dropped_media, dropped_location)
+  compiled_dropped <- bind_rows(starting_data, dropped_duplicates, dropped_missing,
+                                dropped_status, dropped_media, dropped_location)
   documented_drops_out_path <- "3_harmonize/out/clean_wqp_data_strict_dropped_metadata.csv"
   
   write_csv(x = compiled_dropped,

@@ -88,7 +88,7 @@ step_1_dropped <- filter(step_data,
   round(digits = 2)
 ```
 
-The first step in harmonization is to ensure that the media type for the data is `"water"` or `"Water"`. This should just be a precautionary step: `r step_1_dropped` rows are removed. The final row count after this is `r step_1_rows`.
+The first step in chla harmonization is to ensure that the media type for the data is `"water"` or `"Water"`. This should just be a precautionary step: `r step_1_dropped` rows are removed. The final row count after this is `r step_1_rows`.
 
 ```{r echo = FALSE}
 step_data %>%

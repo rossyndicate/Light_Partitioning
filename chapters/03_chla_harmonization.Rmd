@@ -1,0 +1,370 @@
+
+# Chlorophyll harmonization process (strict version)
+
+### 0. Initial dataset
+
+After the preharmonization process the chlorophyll-only WQP dataset
+contains 3.41 million rows.
+
+![](/Users/mbrousil/Documents/Light_Partitioning/chapters/03_chla_harmonization_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+
+<br>
+
+### 1. Filter for water media
+
+The first step in chla harmonization is to ensure that the media type
+for the data is `"water"` or `"Water"`. This should just be a
+precautionary step: 0 rows are removed. The final row count after this
+is 3.41 million.
+
+![](/Users/mbrousil/Documents/Light_Partitioning/chapters/03_chla_harmonization_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+
+<br>
+
+### 2. Keep only chlorophyll parameters
+
+The next step is to ensure that there are only parameter names related
+to chlorophyll a in the dataset. We retain the following values:
+
+- `Chlorophyll a`
+- `Chlorophyll a (probe relative fluorescence)`
+- `Chlorophyll a, corrected for pheophytin`
+- `Chlorophyll a (probe)`
+- `Chlorophyll a, free of pheophytin`
+- `Chlorophyll a - Phytoplankton (suspended)`
+
+1.29 million rows are removed and 2.12 million rows remain.
+
+![](/Users/mbrousil/Documents/Light_Partitioning/chapters/03_chla_harmonization_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+
+<br>
+
+### 3. Remove fails and other missing data
+
+In this step we filter out records based on indications that they have
+failed data for some reason. We screen the following columns:
+`ActivityCommentText`, `ResultLaboratoryCommentText`,
+`ResultCommentText`, and `ResultMeasureValue`. Examples of text that
+results in a dropped record includes (but is not limited to): `"fail"`,
+`"suspect"`, `"error"`, `"beyond accept"`, `"interference"`,
+`"questionable"`, `"problem"`, `"violation"`, `"rejected"`, `"no data"`.
+Specific target text varies by column.
+
+84.07 thousand rows are removed and 2.04 million rows remain.
+
+![](/Users/mbrousil/Documents/Light_Partitioning/chapters/03_chla_harmonization_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+
+<br>
+
+### 4. Clean MDLs
+
+In this step method detection limits (MDLs) are used to clean up the
+reported values. When a numeric value is missing for the data record
+(i.e., `NA` or text that became `NA` during an `as.numeric` call) we
+check for non-detect language in the `ResultLaboratoryCommentText`,
+`ResultCommentText`, `ResultDetectionConditionText`, and
+`ResultMeasureValue` columns. This language can be `"non-detect"`,
+`"not detect"`, `"non detect"`, `"undetect"`, or `"below"`.
+
+If non-detect language exists then we use the
+`DetectionQuantitationLimitMeasure.MeasureValue` column for the MDL,
+otherwise if there is a `<` and a number in the `ResultMeasureValue`
+column we use that number instead.
+
+We then use a random number between 0 and `0.5 * MDL` as the record’s
+value moving forward.
+
+This should not result in a change in rows but we still check: 0 rows
+are removed. The final row count after this is 2.04 million.
+
+![](/Users/mbrousil/Documents/Light_Partitioning/chapters/03_chla_harmonization_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+
+<br>
+
+### 5. Clean approximate values
+
+Step 5 involves a similar process as for MDL cleaning. We flag
+“approximated” values in the dataset. The `ResultMeasureValue` column
+gets checked for **all** three of the following conditions:
+
+1.  Numeric-only version of the column is still `NA` after MDL cleaning
+2.  The original column text contained a number
+3.  Any of `ResultLaboratoryCommentText`, `ResultCommentText`, or
+    `ResultDetectionConditionText` match this regular expression,
+    ignoring case: `"result approx|RESULT IS APPROX|value approx"`
+
+We then use the approximate value as the record’s value moving forward.
+
+This should not result in a change in rows but we still check: 0 rows
+are removed. The final row count after this is 2.04 million.
+
+![](/Users/mbrousil/Documents/Light_Partitioning/chapters/03_chla_harmonization_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
+
+<br>
+
+### 6. Clean values with “greater than” data
+
+Step 6 is similar to the MDL and approximate value cleaning processes,
+and follows the approximate cleaning process most closely. The goal is
+to clean up values that were entered as “greater than” some value. The
+`ResultMeasureValue` column gets checked for **all** three of the
+following conditions:
+
+1.  Numeric-only version of the column is still `NA` after MDL &
+    approximate cleaning
+2.  The original column text contained a number
+3.  The original column text contained a `>`
+
+We then use the “greater than” value (without `>`) as the record’s value
+moving forward.
+
+This should not result in a change in rows but we still check: 0 rows
+are removed. The final row count after this is 2.04 million.
+
+![](/Users/mbrousil/Documents/Light_Partitioning/chapters/03_chla_harmonization_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
+
+<br>
+
+### 7. Harmonize record units
+
+The next step in chla harmonization is working with the units of the WQP
+records. These can vary widely. We create the following conversion
+table, which is used to translate units provided in WQP into
+micrograms/L:
+
+<table class=" lightable-paper table" style="font-family: &quot;Arial Narrow&quot;, arial, helvetica, sans-serif; margin-left: auto; margin-right: auto; width: auto !important; margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:left;">
+units
+</th>
+<th style="text-align:right;">
+conversion
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+mg/l
+</td>
+<td style="text-align:right;">
+1e+03
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+mg/L
+</td>
+<td style="text-align:right;">
+1e+03
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+ppm
+</td>
+<td style="text-align:right;">
+1e+03
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+ug/l
+</td>
+<td style="text-align:right;">
+1e+00
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+ug/L
+</td>
+<td style="text-align:right;">
+1e+00
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+mg/m3
+</td>
+<td style="text-align:right;">
+1e+00
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+ppb
+</td>
+<td style="text-align:right;">
+1e+00
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+mg/cm3
+</td>
+<td style="text-align:right;">
+1e+06
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+ug/ml
+</td>
+<td style="text-align:right;">
+1e+03
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+mg/ml
+</td>
+<td style="text-align:right;">
+1e+06
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+ppt
+</td>
+<td style="text-align:right;">
+1e+06
+</td>
+</tr>
+</tbody>
+</table>
+
+This should not result in a change in rows but we still check: 1.271^{5}
+rows are removed. The final row count after this is 1.91 million.
+
+![](/Users/mbrousil/Documents/Light_Partitioning/chapters/03_chla_harmonization_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
+
+<br>
+
+### 8. Clean depth data
+
+The `ActivityDepthHeightMeasure.MeasureValue` column is the site of our
+next harmonization step. We want to both harmonize the units
+(`ActivityDepthHeightMeasure.MeasureUnitCode`) used in the dataset and
+set limits for depths from which we’ll accept data. We’ll use a
+conversion table as with the previous units harmonization step:
+
+<table class=" lightable-paper table" style="font-family: &quot;Arial Narrow&quot;, arial, helvetica, sans-serif; margin-left: auto; margin-right: auto; width: auto !important; margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:left;">
+depth_units
+</th>
+<th style="text-align:right;">
+depth_conversion
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+in
+</td>
+<td style="text-align:right;">
+0.0254
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+ft
+</td>
+<td style="text-align:right;">
+0.3048
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+feet
+</td>
+<td style="text-align:right;">
+0.3048
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+cm
+</td>
+<td style="text-align:right;">
+0.0100
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+m
+</td>
+<td style="text-align:right;">
+1.0000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+meters
+</td>
+<td style="text-align:right;">
+1.0000
+</td>
+</tr>
+</tbody>
+</table>
+
+Once the units have been standardized we’ll make sure that the numeric
+depth value is within +/-2m **OR** the raw character version indicates
+something similar. We also keep `NA` depths to avoid losing a ton of
+records. This is how it’s coded:
+
+``` r
+converted_units_chla %>%
+  left_join(x = .,
+            y = depth_unit_conversion_table,
+            by = c("sample_depth_unit" = "depth_units")) %>%
+  mutate(harmonized_depth_value = as.numeric(sample_depth) * depth_conversion,
+         harmonized_depth_unit = "m") %>%
+  filter(abs(harmonized_depth_value) <= 2 |
+           sample_depth %in% c("0-2", "0-0.5")|
+           is.na(sample_depth))
+```
+
+<br>
+
+Through our depth filtering we lose 121.13 thousand rows and have 1.79
+million remaining.
+
+![](/Users/mbrousil/Documents/Light_Partitioning/chapters/03_chla_harmonization_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
+
+<br>
+
+### 9. Filter based on analytical method
+
+Our next step is to aggregate chla analytical methods into groups and
+then filter out methods that may have been erroneously added, were
+unclear, or which don’t meet our needs. We accomplish this using an
+external match table `csv` file that is joined to the dataset. Methods
+that are `NA` for their aggregated grouping or which are `"unlikely"` to
+be accurate methods are dropped.
+
+This process drops 2648 rows leaving 1.79 million remaining.
+
+![](/Users/mbrousil/Documents/Light_Partitioning/chapters/03_chla_harmonization_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
+
+<br>
+
+### 10. Filter based on fraction type
+
+The final step in our chla harmonization is filtering based on the
+`ResultSampleFractionText` column. We assign fractions into two
+categories based on whether the fraction text makes sense or not and
+then retain only those records that have a fraction with
+`"Makes sense"`. Fractions included in this are
+`"Non-Filterable (Particle)"`, `"Suspended"`, `"Non-filterable"`,
+`"<Blank>"`, and `"Acid Soluble"`.
+
+This process drops 116.99 thousand rows leaving 1.67 million remaining
+in the final harmonized chla dataset.
+
+![](/Users/mbrousil/Documents/Light_Partitioning/chapters/03_chla_harmonization_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
