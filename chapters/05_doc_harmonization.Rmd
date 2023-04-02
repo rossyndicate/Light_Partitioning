@@ -1,0 +1,240 @@
+
+# Secchi harmonization process (strict version)
+
+### 0. Initial dataset
+
+After the preharmonization process the secchi-only WQP dataset contains
+2.57 million rows.
+
+![](/Users/mbrousil/Documents/Light_Partitioning/chapters/05_doc_harmonization_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+
+<br>
+
+### 1. Filter for water media
+
+The first step in secchi harmonization is to ensure that the media type
+for the data is `"water"` or `"Water"`. This should just be a
+precautionary step: 0 rows are removed. The row count after this is 2.57
+million.
+
+![](/Users/mbrousil/Documents/Light_Partitioning/chapters/05_doc_harmonization_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+
+<br>
+
+### 2. Remove fails and other missing data
+
+In this step we filter out records based on indications that they have
+failed data for some reason. We screen the following columns:
+`ActivityCommentText`, `ResultLaboratoryCommentText`,
+`ResultCommentText`, and `ResultMeasureValue`. Examples of text that
+results in a dropped record includes (but is not limited to): `"fail"`,
+`"suspect"`, `"error"`, `"beyond accept"`, `"interference"`,
+`"questionable"`, `"problem"`, `"violation"`, `"rejected"`,
+`"no secchi"`. Specific target text varies by column.
+
+19.46 thousand rows are removed and 2.55 million rows remain.
+
+![](/Users/mbrousil/Documents/Light_Partitioning/chapters/05_doc_harmonization_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+
+<br>
+
+### 3. Clean MDLs
+
+In this step method detection limits (MDLs) are used to clean up the
+reported values. When a numeric value is missing for the data record
+(i.e., `NA` or text that became `NA` during an `as.numeric` call) we
+check for non-detect language in the `ResultLaboratoryCommentText`,
+`ResultCommentText`, `ResultDetectionConditionText`, and
+`ResultMeasureValue` columns. This language can be `"non-detect"`,
+`"not detect"`, `"non detect"`, `"undetect"`, or `"below"`.
+
+If non-detect language exists then we use the
+`DetectionQuantitationLimitMeasure.MeasureValue` column for the MDL,
+otherwise if there is a `<` and a number in the `ResultMeasureValue`
+column we use that number instead.
+
+We then use a random number between 0 and `0.5 * MDL` as the record’s
+value moving forward.
+
+This should not result in a change in rows but we still check: 0 rows
+are removed. The row count after this is 2.55 million.
+
+![](/Users/mbrousil/Documents/Light_Partitioning/chapters/05_doc_harmonization_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+
+<br>
+
+### 4. Clean approximate values
+
+Step 4 involves a similar process as for MDL cleaning. We flag
+“approximated” values in the dataset. The `ResultMeasureValue` column
+gets checked for **all** three of the following conditions:
+
+1.  Numeric-only version of the column is still `NA` after MDL cleaning
+2.  The original column text contained a number
+3.  Any of `ResultLaboratoryCommentText`, `ResultCommentText`, or
+    `ResultDetectionConditionText` match this regular expression,
+    ignoring case: `"result approx|RESULT IS APPROX|value approx"`
+
+We then use the approximate value as the record’s value moving forward.
+
+This should not result in a change in rows but we still check: 0 rows
+are removed. The row count after this is 2.55 million.
+
+![](/Users/mbrousil/Documents/Light_Partitioning/chapters/05_doc_harmonization_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+
+### 5. Clean values with “greater than” data
+
+Step 5 is similar to the MDL and approximate value cleaning processes,
+and follows the approximate cleaning process most closely. The goal is
+to clean up values that were entered as “greater than” some value. The
+`ResultMeasureValue` column gets checked for **all** three of the
+following conditions:
+
+1.  Numeric-only version of the column is still `NA` after MDL &
+    approximate cleaning
+2.  The original column text contained a number
+3.  The original column text contained a `>`
+
+We then use the “greater than” value (without `>`) as the record’s value
+moving forward.
+
+This should not result in a change in rows but we still check: 0 rows
+are removed. The row count after this is 2.55 million.
+
+![](/Users/mbrousil/Documents/Light_Partitioning/chapters/05_doc_harmonization_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
+
+<br>
+
+### 6. Harmonize record units
+
+The next step in secchi harmonization is working with the units of the
+WQP records. These can vary widely. We create the following conversion
+table, which is used to translate units provided in WQP into meters:
+
+<table class=" lightable-paper table" style="font-family: &quot;Arial Narrow&quot;, arial, helvetica, sans-serif; margin-left: auto; margin-right: auto; width: auto !important; margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:left;">
+units
+</th>
+<th style="text-align:right;">
+conversion
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+m
+</td>
+<td style="text-align:right;">
+1.0000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+ft
+</td>
+<td style="text-align:right;">
+0.3048
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+cm
+</td>
+<td style="text-align:right;">
+0.0100
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+in
+</td>
+<td style="text-align:right;">
+0.0254
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+mm
+</td>
+<td style="text-align:right;">
+0.0010
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+mi
+</td>
+<td style="text-align:right;">
+1609.3400
+</td>
+</tr>
+</tbody>
+</table>
+
+We also limit values to less than 15m to ensure realistic data. 9254
+rows are removed. The row count after this is 2.54 million.
+
+![](/Users/mbrousil/Documents/Light_Partitioning/chapters/05_doc_harmonization_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
+
+<br>
+
+### 7. Filter based on analytical method
+
+Our next step is to aggregate secchi analytical methods into groups and
+then filter out methods that may have been erroneously added, were
+unclear, or which don’t meet our needs. We accomplish this using an
+external match table `csv` file that is joined to the dataset. Methods
+that are coded `"unlikely"` to be accurate methods are dropped.
+
+This process drops 288 rows leaving 2.54 million remaining.
+
+![](/Users/mbrousil/Documents/Light_Partitioning/chapters/05_doc_harmonization_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
+
+<br>
+
+### 8. Filter based on fraction type
+
+The next step in our secchi harmonization is filtering based on the
+`ResultSampleFractionText` column. We assign fractions into two
+categories based on whether the fraction text makes sense or not and
+then retain only those records that have a fraction with
+`"Makes sense"`. Fractions included in this are `NA`, `"Total"`, `" "`,
+`"None"`, `"Unfiltered"`, `"Field"`.
+
+This process drops 94.01 thousand rows leaving 2.45 million remaining in
+the dataset.
+
+![](/Users/mbrousil/Documents/Light_Partitioning/chapters/05_doc_harmonization_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
+
+<br>
+
+### 9. Filter based on sample method
+
+We next filter based on the sample method, or
+`SampleCollectionMethod.MethodName` column. As with analytical methods,
+we accomplish this using an external match table `csv` file that is
+joined to the dataset. Methods that are coded `"unlikely"` to be
+accurate methods are dropped.
+
+This process drops 16.75 thousand rows leaving 2.43 million remaining.
+
+![](/Users/mbrousil/Documents/Light_Partitioning/chapters/05_doc_harmonization_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
+
+<br>
+
+### 10. Filter based on collection equipment
+
+Finally, we examine the collection equipment
+(`SampleCollectionEquipmentName`) column to check for equipment that
+indicates non-secchi measurements. Once again we use an external match
+table `csv` file that is joined to the dataset. Equipment types that are
+coded `"unlikely"` to be accurate to secchi are dropped.
+
+This process drops 55.93 thousand rows leaving 2.38 million remaining.
+
+![](/Users/mbrousil/Documents/Light_Partitioning/chapters/05_doc_harmonization_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
+
+<br>

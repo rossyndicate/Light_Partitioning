@@ -4,18 +4,18 @@
 
   <meta charset="utf-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-  <title>2 Download process | _main.knit</title>
+  <title>6 Secchi harmonization process (strict version) | _main.knit</title>
   <meta name="description" content="" />
   <meta name="generator" content="bookdown 0.30 and GitBook 2.6.7" />
 
-  <meta property="og:title" content="2 Download process | _main.knit" />
+  <meta property="og:title" content="6 Secchi harmonization process (strict version) | _main.knit" />
   <meta property="og:type" content="book" />
   
   
   
 
   <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content="2 Download process | _main.knit" />
+  <meta name="twitter:title" content="6 Secchi harmonization process (strict version) | _main.knit" />
   
   
   
@@ -30,8 +30,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black" />
   
   
-<link rel="prev" href="index.html"/>
-<link rel="next" href="pre-harmonization-decision-process.html"/>
+<link rel="prev" href="doc-harmonization-process-strict-version.html"/>
+<link rel="next" href="tss-harmonization-process-strict-version.html"/>
 <script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.4.6/dist/fuse.min.js"></script>
 <link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
@@ -214,120 +214,212 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
           <div class="page-inner">
 
             <section class="normal" id="section-">
-<div id="download-process" class="section level1 hasAnchor" number="2">
-<h1><span class="header-section-number">2</span> Download process<a href="download-process.html#download-process" class="anchor-section" aria-label="Anchor link to header"></a></h1>
-<div id="catalogue-existing-data" class="section level3 hasAnchor" number="2.0.1">
-<h3><span class="header-section-number">2.0.1</span> Catalogue existing data<a href="download-process.html#catalogue-existing-data" class="anchor-section" aria-label="Anchor link to header"></a></h3>
-<p>The download process begins by cataloging the existing data that is
-available. We start out using the following parameters and parameter
-codes for retrieving data:</p>
-<p>chlorophyll:</p>
-<ul>
-<li>“Chlorophyll”</li>
-<li>“Chlorophyll A”</li>
-<li>“Chlorophyll a”</li>
-<li>“Chlorophyll a (probe relative fluorescence)”</li>
-<li>“Chlorophyll a (probe)”</li>
-<li>“Chlorophyll a - Periphyton (attached)”</li>
-<li>“Chlorophyll a - Phytoplankton (suspended)”</li>
-<li>“Chlorophyll a, corrected for pheophytin”</li>
-<li>“Chlorophyll a, free of pheophytin”</li>
-<li>“Chlorophyll a, uncorrected for pheophytin”</li>
-<li>“Chlorophyll b”</li>
-<li>“Chlorophyll c”</li>
-<li>“Chlorophyll/Pheophytin ratio”</li>
-</ul>
-<p>secchi:</p>
-<ul>
-<li>“Depth, Secchi disk depth”</li>
-<li>“Depth, Secchi disk depth (choice list)”</li>
-<li>“Secchi Reading Condition (choice list)”</li>
-<li>“Secchi depth”</li>
-<li>“Water transparency, Secchi disc”</li>
-</ul>
-<p>doc:</p>
-<ul>
-<li>“Organic carbon”</li>
-<li>“Total carbon”</li>
-<li>“Hydrophilic fraction of organic carbon”</li>
-<li>“Non-purgeable Organic Carbon (NPOC)”</li>
-</ul>
-<p>tss:</p>
-<ul>
-<li>“Total suspended solids”</li>
-<li>“Total Suspended Particulate Matter”</li>
-</ul>
+<div id="secchi-harmonization-process-strict-version" class="section level1 hasAnchor" number="6">
+<h1><span class="header-section-number">6</span> Secchi harmonization process (strict version)<a href="secchi-harmonization-process-strict-version.html#secchi-harmonization-process-strict-version" class="anchor-section" aria-label="Anchor link to header"></a></h1>
+<div id="initial-dataset-3" class="section level3 hasAnchor" number="6.0.1">
+<h3><span class="header-section-number">6.0.1</span> 0. Initial dataset<a href="secchi-harmonization-process-strict-version.html#initial-dataset-3" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>After the preharmonization process the secchi-only WQP dataset contains
+2.57 million rows.</p>
+<p><img src="chapters/05_doc_harmonization_files/figure-gfm/unnamed-chunk-4-1.png" /><!-- --></p>
 <p><br></p>
 </div>
-<div id="maps-of-data-spread-within-the-contiguous-us" class="section level3 hasAnchor" number="2.0.2">
-<h3><span class="header-section-number">2.0.2</span> Maps of data spread within the contiguous US:<a href="download-process.html#maps-of-data-spread-within-the-contiguous-us" class="anchor-section" aria-label="Anchor link to header"></a></h3>
-<p>Maps are presented below with counts of records across a grid. The grid
-is how records are grouped in download requests to the Water Quality
-Portal. Florida is mapped separately because of its high concentration
-of values. <strong>Note:</strong> 1) the top four grid cells in the FL map are
-included in both maps, 2) the counts here are for raw data that are not
-filtered for simultaneous records.</p>
-<details class=chunk-details><summary class=chunk-summary><span class=chunk-summary-text>Code</span></summary>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="download-process.html#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Combine counts in each grid_id with the grid polygons</span></span>
-<span id="cb1-2"><a href="download-process.html#cb1-2" aria-hidden="true" tabindex="-1"></a>grid_counts <span class="ot">&lt;-</span> <span class="fu">left_join</span>(<span class="at">x =</span> global_grid,</span>
-<span id="cb1-3"><a href="download-process.html#cb1-3" aria-hidden="true" tabindex="-1"></a>                         <span class="at">y =</span> site_counts <span class="sc">%&gt;%</span></span>
-<span id="cb1-4"><a href="download-process.html#cb1-4" aria-hidden="true" tabindex="-1"></a>                           <span class="fu">count</span>(grid_id),</span>
-<span id="cb1-5"><a href="download-process.html#cb1-5" aria-hidden="true" tabindex="-1"></a>                         <span class="at">by =</span> <span class="fu">c</span>(<span class="st">&quot;id&quot;</span> <span class="ot">=</span> <span class="st">&quot;grid_id&quot;</span>)) <span class="sc">%&gt;%</span></span>
-<span id="cb1-6"><a href="download-process.html#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_transform</span>(<span class="at">crs =</span> <span class="dv">9311</span>)</span>
-<span id="cb1-7"><a href="download-process.html#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-8"><a href="download-process.html#cb1-8" aria-hidden="true" tabindex="-1"></a>state_selection <span class="ot">&lt;-</span> <span class="fu">states</span>(<span class="at">progress_bar =</span> <span class="cn">FALSE</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb1-9"><a href="download-process.html#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span>NAME <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">&quot;Alaska&quot;</span>, <span class="st">&quot;Hawaii&quot;</span>, <span class="st">&quot;American Samoa&quot;</span>,</span>
-<span id="cb1-10"><a href="download-process.html#cb1-10" aria-hidden="true" tabindex="-1"></a>                      <span class="st">&quot;Guam&quot;</span>, <span class="st">&quot;Puerto Rico&quot;</span>,</span>
-<span id="cb1-11"><a href="download-process.html#cb1-11" aria-hidden="true" tabindex="-1"></a>                      <span class="st">&quot;United States Virgin Islands&quot;</span>,</span>
-<span id="cb1-12"><a href="download-process.html#cb1-12" aria-hidden="true" tabindex="-1"></a>                      <span class="st">&quot;Commonwealth of the Northern Mariana Islands&quot;</span>)) <span class="sc">%&gt;%</span></span>
-<span id="cb1-13"><a href="download-process.html#cb1-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_transform</span>(<span class="at">crs =</span> <span class="dv">9311</span>)</span></code></pre></div>
-</details>
-<pre><code>## Retrieving data for the year 2020</code></pre>
-<details class=chunk-details><summary class=chunk-summary><span class=chunk-summary-text>Code</span></summary>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="download-process.html#cb3-1" aria-hidden="true" tabindex="-1"></a>non_fl_map <span class="ot">&lt;-</span> <span class="fu">ggplot</span>() <span class="sc">+</span></span>
-<span id="cb3-2"><a href="download-process.html#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="at">data =</span> grid_counts <span class="sc">%&gt;%</span></span>
-<span id="cb3-3"><a href="download-process.html#cb3-3" aria-hidden="true" tabindex="-1"></a>            <span class="fu">filter</span>(<span class="sc">!</span>id <span class="sc">%in%</span> <span class="fu">c</span>(<span class="co">#10847:10850,</span></span>
-<span id="cb3-4"><a href="download-process.html#cb3-4" aria-hidden="true" tabindex="-1"></a>                              <span class="dv">10668</span>, <span class="dv">10669</span>, <span class="dv">10670</span>, <span class="dv">10489</span>, <span class="dv">10490</span>,</span>
-<span id="cb3-5"><a href="download-process.html#cb3-5" aria-hidden="true" tabindex="-1"></a>                              <span class="dv">10491</span>, <span class="dv">10309</span>, <span class="dv">10310</span>)),</span>
-<span id="cb3-6"><a href="download-process.html#cb3-6" aria-hidden="true" tabindex="-1"></a>          <span class="fu">aes</span>(<span class="at">fill =</span> n)) <span class="sc">+</span></span>
-<span id="cb3-7"><a href="download-process.html#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="at">data =</span> state_selection <span class="sc">%&gt;%</span></span>
-<span id="cb3-8"><a href="download-process.html#cb3-8" aria-hidden="true" tabindex="-1"></a>            <span class="fu">filter</span>(NAME <span class="sc">!=</span> <span class="st">&quot;Florida&quot;</span>), <span class="at">fill =</span> <span class="cn">NA</span>, <span class="at">color =</span> <span class="st">&quot;white&quot;</span>) <span class="sc">+</span></span>
-<span id="cb3-9"><a href="download-process.html#cb3-9" aria-hidden="true" tabindex="-1"></a>  <span class="co"># geom_sf_text(data = grid_counts, aes(label = id)) +</span></span>
-<span id="cb3-10"><a href="download-process.html#cb3-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlab</span>(<span class="cn">NULL</span>) <span class="sc">+</span></span>
-<span id="cb3-11"><a href="download-process.html#cb3-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ylab</span>(<span class="cn">NULL</span>) <span class="sc">+</span></span>
-<span id="cb3-12"><a href="download-process.html#cb3-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_sf</span>(<span class="at">xlim =</span> <span class="fu">c</span>(<span class="fu">min</span>(<span class="fu">st_coordinates</span>(state_selection)[,<span class="st">&quot;X&quot;</span>]),</span>
-<span id="cb3-13"><a href="download-process.html#cb3-13" aria-hidden="true" tabindex="-1"></a>                    <span class="fu">max</span>(<span class="fu">st_coordinates</span>(state_selection)[,<span class="st">&quot;X&quot;</span>])),</span>
-<span id="cb3-14"><a href="download-process.html#cb3-14" aria-hidden="true" tabindex="-1"></a>           <span class="at">ylim =</span> <span class="fu">c</span>(<span class="fu">min</span>(<span class="fu">st_coordinates</span>(state_selection)[,<span class="st">&quot;Y&quot;</span>]),</span>
-<span id="cb3-15"><a href="download-process.html#cb3-15" aria-hidden="true" tabindex="-1"></a>                    <span class="fu">max</span>(<span class="fu">st_coordinates</span>(state_selection)[,<span class="st">&quot;Y&quot;</span>]))) <span class="sc">+</span></span>
-<span id="cb3-16"><a href="download-process.html#cb3-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_viridis_c</span>(<span class="st">&quot;Record count&quot;</span>) <span class="sc">+</span></span>
-<span id="cb3-17"><a href="download-process.html#cb3-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_bw</span>()</span>
-<span id="cb3-18"><a href="download-process.html#cb3-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-19"><a href="download-process.html#cb3-19" aria-hidden="true" tabindex="-1"></a>non_fl_map</span></code></pre></div>
-</details>
-<p><img src="chapters/01_download_files/figure-gfm/unnamed-chunk-2-1.png" /><!-- --></p>
-<details class=chunk-details><summary class=chunk-summary><span class=chunk-summary-text>Code</span></summary>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="download-process.html#cb4-1" aria-hidden="true" tabindex="-1"></a>fl_states <span class="ot">&lt;-</span> state_selection <span class="sc">%&gt;%</span></span>
-<span id="cb4-2"><a href="download-process.html#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(NAME <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">&quot;Florida&quot;</span>, <span class="st">&quot;Georgia&quot;</span>, <span class="st">&quot;Alabama&quot;</span>))</span>
-<span id="cb4-3"><a href="download-process.html#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-4"><a href="download-process.html#cb4-4" aria-hidden="true" tabindex="-1"></a>fl_map <span class="ot">&lt;-</span> <span class="fu">ggplot</span>() <span class="sc">+</span></span>
-<span id="cb4-5"><a href="download-process.html#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="at">data =</span> grid_counts <span class="sc">%&gt;%</span></span>
-<span id="cb4-6"><a href="download-process.html#cb4-6" aria-hidden="true" tabindex="-1"></a>            <span class="fu">filter</span>(id <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">10847</span><span class="sc">:</span><span class="dv">10850</span>, <span class="dv">10668</span>, <span class="dv">10669</span>, <span class="dv">10670</span>, <span class="dv">10489</span>, <span class="dv">10490</span>,</span>
-<span id="cb4-7"><a href="download-process.html#cb4-7" aria-hidden="true" tabindex="-1"></a>                              <span class="dv">10491</span>, <span class="dv">10309</span>, <span class="dv">10310</span>)),</span>
-<span id="cb4-8"><a href="download-process.html#cb4-8" aria-hidden="true" tabindex="-1"></a>          <span class="fu">aes</span>(<span class="at">fill =</span> n)) <span class="sc">+</span></span>
-<span id="cb4-9"><a href="download-process.html#cb4-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="at">data =</span> fl_states, <span class="at">fill =</span> <span class="cn">NA</span>, <span class="at">color =</span> <span class="st">&quot;black&quot;</span>) <span class="sc">+</span></span>
-<span id="cb4-10"><a href="download-process.html#cb4-10" aria-hidden="true" tabindex="-1"></a>  <span class="co"># geom_sf_label(data = grid_counts, aes(label = id)) +</span></span>
-<span id="cb4-11"><a href="download-process.html#cb4-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">xlab</span>(<span class="cn">NULL</span>) <span class="sc">+</span></span>
-<span id="cb4-12"><a href="download-process.html#cb4-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ylab</span>(<span class="cn">NULL</span>) <span class="sc">+</span></span>
-<span id="cb4-13"><a href="download-process.html#cb4-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_sf</span>(<span class="at">xlim =</span> <span class="fu">c</span>(<span class="fu">min</span>(<span class="fu">st_coordinates</span>(fl_states)[,<span class="st">&quot;X&quot;</span>]),</span>
-<span id="cb4-14"><a href="download-process.html#cb4-14" aria-hidden="true" tabindex="-1"></a>                    <span class="fu">max</span>(<span class="fu">st_coordinates</span>(fl_states)[,<span class="st">&quot;X&quot;</span>])),</span>
-<span id="cb4-15"><a href="download-process.html#cb4-15" aria-hidden="true" tabindex="-1"></a>           <span class="at">ylim =</span> <span class="fu">c</span>(<span class="fu">min</span>(<span class="fu">st_coordinates</span>(fl_states)[,<span class="st">&quot;Y&quot;</span>]),</span>
-<span id="cb4-16"><a href="download-process.html#cb4-16" aria-hidden="true" tabindex="-1"></a>                    <span class="fu">max</span>(<span class="fu">st_coordinates</span>(fl_states)[,<span class="st">&quot;Y&quot;</span>]))) <span class="sc">+</span></span>
-<span id="cb4-17"><a href="download-process.html#cb4-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_viridis_c</span>(<span class="st">&quot;Record count&quot;</span>) <span class="sc">+</span></span>
-<span id="cb4-18"><a href="download-process.html#cb4-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_bw</span>()</span>
-<span id="cb4-19"><a href="download-process.html#cb4-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-20"><a href="download-process.html#cb4-20" aria-hidden="true" tabindex="-1"></a>fl_map</span></code></pre></div>
-</details>
-<p><img src="chapters/01_download_files/figure-gfm/unnamed-chunk-2-2.png" /><!-- --></p>
+<div id="filter-for-water-media-2" class="section level3 hasAnchor" number="6.0.2">
+<h3><span class="header-section-number">6.0.2</span> 1. Filter for water media<a href="secchi-harmonization-process-strict-version.html#filter-for-water-media-2" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>The first step in secchi harmonization is to ensure that the media type
+for the data is <code>"water"</code> or <code>"Water"</code>. This should just be a
+precautionary step: 0 rows are removed. The row count after this is 2.57
+million.</p>
+<p><img src="chapters/05_doc_harmonization_files/figure-gfm/unnamed-chunk-6-1.png" /><!-- --></p>
+<p><br></p>
+</div>
+<div id="remove-fails-and-other-missing-data-2" class="section level3 hasAnchor" number="6.0.3">
+<h3><span class="header-section-number">6.0.3</span> 2. Remove fails and other missing data<a href="secchi-harmonization-process-strict-version.html#remove-fails-and-other-missing-data-2" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>In this step we filter out records based on indications that they have
+failed data for some reason. We screen the following columns:
+<code>ActivityCommentText</code>, <code>ResultLaboratoryCommentText</code>,
+<code>ResultCommentText</code>, and <code>ResultMeasureValue</code>. Examples of text that
+results in a dropped record includes (but is not limited to): <code>"fail"</code>,
+<code>"suspect"</code>, <code>"error"</code>, <code>"beyond accept"</code>, <code>"interference"</code>,
+<code>"questionable"</code>, <code>"problem"</code>, <code>"violation"</code>, <code>"rejected"</code>,
+<code>"no secchi"</code>. Specific target text varies by column.</p>
+<p>19.46 thousand rows are removed and 2.55 million rows remain.</p>
+<p><img src="chapters/05_doc_harmonization_files/figure-gfm/unnamed-chunk-8-1.png" /><!-- --></p>
+<p><br></p>
+</div>
+<div id="clean-mdls-2" class="section level3 hasAnchor" number="6.0.4">
+<h3><span class="header-section-number">6.0.4</span> 3. Clean MDLs<a href="secchi-harmonization-process-strict-version.html#clean-mdls-2" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>In this step method detection limits (MDLs) are used to clean up the
+reported values. When a numeric value is missing for the data record
+(i.e., <code>NA</code> or text that became <code>NA</code> during an <code>as.numeric</code> call) we
+check for non-detect language in the <code>ResultLaboratoryCommentText</code>,
+<code>ResultCommentText</code>, <code>ResultDetectionConditionText</code>, and
+<code>ResultMeasureValue</code> columns. This language can be <code>"non-detect"</code>,
+<code>"not detect"</code>, <code>"non detect"</code>, <code>"undetect"</code>, or <code>"below"</code>.</p>
+<p>If non-detect language exists then we use the
+<code>DetectionQuantitationLimitMeasure.MeasureValue</code> column for the MDL,
+otherwise if there is a <code>&lt;</code> and a number in the <code>ResultMeasureValue</code>
+column we use that number instead.</p>
+<p>We then use a random number between 0 and <code>0.5 * MDL</code> as the record’s
+value moving forward.</p>
+<p>This should not result in a change in rows but we still check: 0 rows
+are removed. The row count after this is 2.55 million.</p>
+<p><img src="chapters/05_doc_harmonization_files/figure-gfm/unnamed-chunk-10-1.png" /><!-- --></p>
+<p><br></p>
+</div>
+<div id="clean-approximate-values-2" class="section level3 hasAnchor" number="6.0.5">
+<h3><span class="header-section-number">6.0.5</span> 4. Clean approximate values<a href="secchi-harmonization-process-strict-version.html#clean-approximate-values-2" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>Step 4 involves a similar process as for MDL cleaning. We flag
+“approximated” values in the dataset. The <code>ResultMeasureValue</code> column
+gets checked for <strong>all</strong> three of the following conditions:</p>
+<ol style="list-style-type: decimal">
+<li>Numeric-only version of the column is still <code>NA</code> after MDL cleaning</li>
+<li>The original column text contained a number</li>
+<li>Any of <code>ResultLaboratoryCommentText</code>, <code>ResultCommentText</code>, or
+<code>ResultDetectionConditionText</code> match this regular expression,
+ignoring case: <code>"result approx|RESULT IS APPROX|value approx"</code></li>
+</ol>
+<p>We then use the approximate value as the record’s value moving forward.</p>
+<p>This should not result in a change in rows but we still check: 0 rows
+are removed. The row count after this is 2.55 million.</p>
+<p><img src="chapters/05_doc_harmonization_files/figure-gfm/unnamed-chunk-12-1.png" /><!-- --></p>
+</div>
+<div id="clean-values-with-greater-than-data-1" class="section level3 hasAnchor" number="6.0.6">
+<h3><span class="header-section-number">6.0.6</span> 5. Clean values with “greater than” data<a href="secchi-harmonization-process-strict-version.html#clean-values-with-greater-than-data-1" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>Step 5 is similar to the MDL and approximate value cleaning processes,
+and follows the approximate cleaning process most closely. The goal is
+to clean up values that were entered as “greater than” some value. The
+<code>ResultMeasureValue</code> column gets checked for <strong>all</strong> three of the
+following conditions:</p>
+<ol style="list-style-type: decimal">
+<li>Numeric-only version of the column is still <code>NA</code> after MDL &amp;
+approximate cleaning</li>
+<li>The original column text contained a number</li>
+<li>The original column text contained a <code>&gt;</code></li>
+</ol>
+<p>We then use the “greater than” value (without <code>&gt;</code>) as the record’s value
+moving forward.</p>
+<p>This should not result in a change in rows but we still check: 0 rows
+are removed. The row count after this is 2.55 million.</p>
+<p><img src="chapters/05_doc_harmonization_files/figure-gfm/unnamed-chunk-14-1.png" /><!-- --></p>
+<p><br></p>
+</div>
+<div id="harmonize-record-units-2" class="section level3 hasAnchor" number="6.0.7">
+<h3><span class="header-section-number">6.0.7</span> 6. Harmonize record units<a href="secchi-harmonization-process-strict-version.html#harmonize-record-units-2" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>The next step in secchi harmonization is working with the units of the
+WQP records. These can vary widely. We create the following conversion
+table, which is used to translate units provided in WQP into meters:</p>
+<table class=" lightable-paper table" style="font-family: &quot;Arial Narrow&quot;, arial, helvetica, sans-serif; margin-left: auto; margin-right: auto; width: auto !important; margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:left;">
+units
+</th>
+<th style="text-align:right;">
+conversion
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+m
+</td>
+<td style="text-align:right;">
+1.0000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+ft
+</td>
+<td style="text-align:right;">
+0.3048
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+cm
+</td>
+<td style="text-align:right;">
+0.0100
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+in
+</td>
+<td style="text-align:right;">
+0.0254
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+mm
+</td>
+<td style="text-align:right;">
+0.0010
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+mi
+</td>
+<td style="text-align:right;">
+1609.3400
+</td>
+</tr>
+</tbody>
+</table>
+<p>We also limit values to less than 15m to ensure realistic data. 9254
+rows are removed. The row count after this is 2.54 million.</p>
+<p><img src="chapters/05_doc_harmonization_files/figure-gfm/unnamed-chunk-17-1.png" /><!-- --></p>
+<p><br></p>
+</div>
+<div id="filter-based-on-analytical-method-2" class="section level3 hasAnchor" number="6.0.8">
+<h3><span class="header-section-number">6.0.8</span> 7. Filter based on analytical method<a href="secchi-harmonization-process-strict-version.html#filter-based-on-analytical-method-2" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>Our next step is to aggregate secchi analytical methods into groups and
+then filter out methods that may have been erroneously added, were
+unclear, or which don’t meet our needs. We accomplish this using an
+external match table <code>csv</code> file that is joined to the dataset. Methods
+that are coded <code>"unlikely"</code> to be accurate methods are dropped.</p>
+<p>This process drops 288 rows leaving 2.54 million remaining.</p>
+<p><img src="chapters/05_doc_harmonization_files/figure-gfm/unnamed-chunk-19-1.png" /><!-- --></p>
+<p><br></p>
+</div>
+<div id="filter-based-on-fraction-type-2" class="section level3 hasAnchor" number="6.0.9">
+<h3><span class="header-section-number">6.0.9</span> 8. Filter based on fraction type<a href="secchi-harmonization-process-strict-version.html#filter-based-on-fraction-type-2" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>The next step in our secchi harmonization is filtering based on the
+<code>ResultSampleFractionText</code> column. We assign fractions into two
+categories based on whether the fraction text makes sense or not and
+then retain only those records that have a fraction with
+<code>"Makes sense"</code>. Fractions included in this are <code>NA</code>, <code>"Total"</code>, <code>" "</code>,
+<code>"None"</code>, <code>"Unfiltered"</code>, <code>"Field"</code>.</p>
+<p>This process drops 94.01 thousand rows leaving 2.45 million remaining in
+the dataset.</p>
+<p><img src="chapters/05_doc_harmonization_files/figure-gfm/unnamed-chunk-21-1.png" /><!-- --></p>
+<p><br></p>
+</div>
+<div id="filter-based-on-sample-method" class="section level3 hasAnchor" number="6.0.10">
+<h3><span class="header-section-number">6.0.10</span> 9. Filter based on sample method<a href="secchi-harmonization-process-strict-version.html#filter-based-on-sample-method" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>We next filter based on the sample method, or
+<code>SampleCollectionMethod.MethodName</code> column. As with analytical methods,
+we accomplish this using an external match table <code>csv</code> file that is
+joined to the dataset. Methods that are coded <code>"unlikely"</code> to be
+accurate methods are dropped.</p>
+<p>This process drops 16.75 thousand rows leaving 2.43 million remaining.</p>
+<p><img src="chapters/05_doc_harmonization_files/figure-gfm/unnamed-chunk-23-1.png" /><!-- --></p>
+<p><br></p>
+</div>
+<div id="filter-based-on-collection-equipment" class="section level3 hasAnchor" number="6.0.11">
+<h3><span class="header-section-number">6.0.11</span> 10. Filter based on collection equipment<a href="secchi-harmonization-process-strict-version.html#filter-based-on-collection-equipment" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>Finally, we examine the collection equipment
+(<code>SampleCollectionEquipmentName</code>) column to check for equipment that
+indicates non-secchi measurements. Once again we use an external match
+table <code>csv</code> file that is joined to the dataset. Equipment types that are
+coded <code>"unlikely"</code> to be accurate to secchi are dropped.</p>
+<p>This process drops 55.93 thousand rows leaving 2.38 million remaining.</p>
+<p><img src="chapters/05_doc_harmonization_files/figure-gfm/unnamed-chunk-25-1.png" /><!-- --></p>
+<p><br></p>
 
 </div>
 </div>
@@ -336,8 +428,8 @@ filtered for simultaneous records.</p>
           </div>
         </div>
       </div>
-<a href="index.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
-<a href="pre-harmonization-decision-process.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+<a href="doc-harmonization-process-strict-version.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="tss-harmonization-process-strict-version.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
     </div>
   </div>
 <script src="libs/gitbook-2.6.7/js/app.min.js"></script>

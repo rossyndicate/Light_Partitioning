@@ -114,13 +114,13 @@ harmonize_sdd <- function(raw_sdd, p_codes,
       half = as.numeric(mdl_vals) / 2)
   
   # Using the EPA standard for non-detects, select a random number between zero and HALF the MDL:
-  mdl_updates$epa_value <- with(mdl_updates, runif(nrow(mdl_updates), 0, half))
-  mdl_updates$epa_value[is.nan(mdl_updates$epa_value)] <- NA
+  mdl_updates$std_value <- with(mdl_updates, runif(nrow(mdl_updates), 0, half))
+  mdl_updates$std_value[is.nan(mdl_updates$std_value)] <- NA
   
   # Keep important data
   mdl_updates <- mdl_updates %>%
-    select(index, epa_value, mdl_vals, mdl_units) %>%
-    filter(!is.na(epa_value))
+    select(index, std_value, mdl_vals, mdl_units) %>%
+    filter(!is.na(std_value))
   
   
   print(
@@ -133,7 +133,7 @@ harmonize_sdd <- function(raw_sdd, p_codes,
   # Replace "harmonized_value" field with these new values
   sdd_mdls_added <- sdd_fails_removed %>%
     left_join(x = ., y = mdl_updates, by = "index") %>%
-    mutate(harmonized_value = ifelse(index %in% mdl_updates$index, epa_value, value_numeric),
+    mutate(harmonized_value = ifelse(index %in% mdl_updates$index, std_value, value_numeric),
            harmonized_units = ifelse(index %in% mdl_updates$index, mdl_units, units),
            harmonized_comments = ifelse(index %in% mdl_updates$index,
                                         "Approximated using the EPA's MDL method.", NA))

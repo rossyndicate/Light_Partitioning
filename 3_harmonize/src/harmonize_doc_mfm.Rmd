@@ -387,14 +387,14 @@ mdl <- mdl %>%
   mutate(zero = 0,
          half = num_value/2)
 
-mdl$epa_mdl <- with(mdl,runif(nrow(mdl),zero,half))
+mdl$std_mdl <- with(mdl,runif(nrow(mdl),zero,half))
 
-mdl <- select(mdl,index,epa_mdl)
+mdl <- select(mdl,index,std_mdl)
 
 # replace value field with these new values
 mdls_added <- doc_empties_removed %>%
               left_join(mdl,by="index") %>%
-              mutate(aquasat_value=ifelse(index %in% mdl$index, epa_mdl, value),
+              mutate(aquasat_value=ifelse(index %in% mdl$index, std_mdl, value),
                      aquasat_comments = ifelse(index %in% mdl$index, "Approximated, EPA LDL method", NA))
 
 approx <- mdls_added %>%

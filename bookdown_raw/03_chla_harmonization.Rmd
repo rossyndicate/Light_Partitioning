@@ -34,7 +34,6 @@ step_data <- documented_drops %>%
 
 ```{r echo=FALSE}
 step_0_rows <- filter(step_data,
-                      step == "chla harmonization",
                       order == 0) %>%
   mutate(mil_row = n_rows / 1000000) %>%
   pull(mil_row) %>%
@@ -74,7 +73,6 @@ step_data %>%
 
 ```{r echo = FALSE}
 step_1_rows <- filter(step_data,
-                      step == "chla harmonization",
                       order == 1) %>%
   mutate(mil_row = n_rows / 1000000) %>%
   pull(mil_row) %>%
@@ -82,7 +80,6 @@ step_1_rows <- filter(step_data,
   paste0(., " million")
 
 step_1_dropped <- filter(step_data,
-                         step == "chla harmonization",
                          order == 1) %>%
   pull(number_dropped) %>%
   round(digits = 2)
@@ -119,7 +116,6 @@ step_data %>%
 
 ```{r echo = FALSE}
 step_2_rows <- filter(step_data,
-                      step == "chla harmonization",
                       order == 2) %>%
   mutate(mil_row = n_rows / 1000000) %>%
   pull(mil_row) %>%
@@ -127,7 +123,6 @@ step_2_rows <- filter(step_data,
   paste0(., " million")
 
 step_2_dropped <- filter(step_data,
-                         step == "chla harmonization",
                          order == 2) %>%
   mutate(mil_dropped = number_dropped / 1000000) %>%
   pull(mil_dropped) %>%
@@ -175,7 +170,6 @@ step_data %>%
 
 ```{r echo = FALSE}
 step_3_rows <- filter(step_data,
-                      step == "chla harmonization",
                       order == 3) %>%
   mutate(mil_row = n_rows / 1000000) %>%
   pull(mil_row) %>%
@@ -183,7 +177,6 @@ step_3_rows <- filter(step_data,
   paste0(., " million")
 
 step_3_dropped <- filter(step_data,
-                         step == "chla harmonization",
                          order == 3) %>%
   mutate(thou_dropped = number_dropped / 1000) %>%
   pull(thou_dropped) %>%
@@ -224,7 +217,6 @@ step_data %>%
 
 ```{r echo = FALSE}
 step_4_rows <- filter(step_data,
-                      step == "chla harmonization",
                       order == 4) %>%
   mutate(mil_row = n_rows / 1000000) %>%
   pull(mil_row) %>%
@@ -232,7 +224,6 @@ step_4_rows <- filter(step_data,
   paste0(., " million")
 
 step_4_dropped <- filter(step_data,
-                         step == "chla harmonization",
                          order == 4) %>%
   pull(number_dropped) %>%
   round(digits = 2)
@@ -276,7 +267,6 @@ step_data %>%
 
 ```{r echo = FALSE}
 step_5_rows <- filter(step_data,
-                      step == "chla harmonization",
                       order == 5) %>%
   mutate(mil_row = n_rows / 1000000) %>%
   pull(mil_row) %>%
@@ -284,7 +274,6 @@ step_5_rows <- filter(step_data,
   paste0(., " million")
 
 step_5_dropped <- filter(step_data,
-                         step == "chla harmonization",
                          order == 5) %>%
   pull(number_dropped) %>%
   round(digits = 2)
@@ -329,7 +318,6 @@ step_data %>%
 
 ```{r echo = FALSE}
 step_6_rows <- filter(step_data,
-                      step == "chla harmonization",
                       order == 6) %>%
   mutate(mil_row = n_rows / 1000000) %>%
   pull(mil_row) %>%
@@ -337,7 +325,6 @@ step_6_rows <- filter(step_data,
   paste0(., " million")
 
 step_6_dropped <- filter(step_data,
-                         step == "chla harmonization",
                          order == 6) %>%
   pull(number_dropped) %>%
   round(digits = 2)
@@ -383,7 +370,6 @@ step_data %>%
 
 ```{r echo = FALSE}
 step_7_rows <- filter(step_data,
-                      step == "chla harmonization",
                       order == 7) %>%
   mutate(mil_row = n_rows / 1000000) %>%
   pull(mil_row) %>%
@@ -391,7 +377,6 @@ step_7_rows <- filter(step_data,
   paste0(., " million")
 
 step_7_dropped <- filter(step_data,
-                         step == "chla harmonization",
                          order == 7) %>%
   pull(number_dropped) %>%
   round(digits = 2)
@@ -443,7 +428,6 @@ step_data %>%
 
 ```{r echo = FALSE}
 step_8_rows <- filter(step_data,
-                      step == "chla harmonization",
                       order == 8) %>%
   mutate(mil_row = n_rows / 1000000) %>%
   pull(mil_row) %>%
@@ -451,7 +435,6 @@ step_8_rows <- filter(step_data,
   paste0(., " million")
 
 step_8_dropped <- filter(step_data,
-                         step == "chla harmonization",
                          order == 8) %>%
   mutate(thou_dropped = number_dropped / 1000) %>%
   pull(thou_dropped) %>%
@@ -518,7 +501,6 @@ step_data %>%
 
 ```{r echo = FALSE}
 step_9_rows <- filter(step_data,
-                      step == "chla harmonization",
                       order == 9) %>%
   mutate(mil_row = n_rows / 1000000) %>%
   pull(mil_row) %>%
@@ -526,7 +508,6 @@ step_9_rows <- filter(step_data,
   paste0(., " million")
 
 step_9_dropped <- filter(step_data,
-                         step == "chla harmonization",
                          order == 9) %>%
   pull(number_dropped) %>%
   round(digits = 2)
@@ -565,7 +546,6 @@ step_data %>%
 
 ```{r echo = FALSE}
 step_10_rows <- filter(step_data,
-                       step == "chla harmonization",
                        order == 10) %>%
   mutate(mil_row = n_rows / 1000000) %>%
   pull(mil_row) %>%
@@ -573,7 +553,6 @@ step_10_rows <- filter(step_data,
   paste0(., " million")
 
 step_10_dropped <- filter(step_data,
-                         step == "chla harmonization",
                          order == 10) %>%
   mutate(thou_dropped = number_dropped / 1000) %>%
   pull(thou_dropped) %>%

@@ -1,23 +1,23 @@
 
-# DOC harmonization process (strict version)
+# TSS harmonization process (strict version)
 
 ### 0. Initial dataset
 
-After the preharmonization process the DOC-only WQP dataset contains
-2.15 million rows.
+After the preharmonization process the tss-only WQP dataset contains
+3.23 million rows.
 
-![](/Users/mbrousil/Documents/Light_Partitioning/chapters/04_doc_harmonization_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+![](/Users/mbrousil/Documents/Light_Partitioning/chapters/06_tss_harmonization_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
 
 <br>
 
 ### 1. Filter for water media
 
-The first step in DOC harmonization is to ensure that the media type for
+The first step in TSS harmonization is to ensure that the media type for
 the data is `"water"` or `"Water"`. This should just be a precautionary
-step: 0 rows are removed. The final row count after this is 2.15
+step: 0 rows are removed. The final row count after this is 3.23
 million.
 
-![](/Users/mbrousil/Documents/Light_Partitioning/chapters/04_doc_harmonization_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+![](/Users/mbrousil/Documents/Light_Partitioning/chapters/06_tss_harmonization_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
 <br>
 
@@ -33,9 +33,9 @@ dropped record includes (but is not limited to): `"fail"`, `"suspect"`,
 `"problem"`, `"violation"`, `"rejected"`, `"no data"`. Specific target
 text varies by column.
 
-72.25 thousand rows are removed and 2.08 million rows remain.
+151.01 thousand rows are removed and 3.08 million rows remain.
 
-![](/Users/mbrousil/Documents/Light_Partitioning/chapters/04_doc_harmonization_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+![](/Users/mbrousil/Documents/Light_Partitioning/chapters/06_tss_harmonization_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
 <br>
 
@@ -58,9 +58,9 @@ We then use a random number between 0 and `0.5 * MDL` as the record’s
 value moving forward.
 
 This should not result in a change in rows but we still check: 0 rows
-are removed. The final row count after this is 2.08 million.
+are removed. The final row count after this is 3.08 million.
 
-![](/Users/mbrousil/Documents/Light_Partitioning/chapters/04_doc_harmonization_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+![](/Users/mbrousil/Documents/Light_Partitioning/chapters/06_tss_harmonization_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
 
 <br>
 
@@ -79,15 +79,38 @@ gets checked for **all** three of the following conditions:
 We then use the approximate value as the record’s value moving forward.
 
 This should not result in a change in rows but we still check: 0 rows
-are removed. The final row count after this is 2.08 million.
+are removed. The final row count after this is 3.08 million.
 
-![](/Users/mbrousil/Documents/Light_Partitioning/chapters/04_doc_harmonization_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+![](/Users/mbrousil/Documents/Light_Partitioning/chapters/06_tss_harmonization_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
 
 <br>
 
-### 5. Harmonize record units
+### 5. Clean values with “greater than” data
 
-The next step in doc harmonization is working with the units of the WQP
+Step 5 is similar to the MDL and approximate value cleaning processes,
+and follows the approximate cleaning process most closely. The goal is
+to clean up values that were entered as “greater than” some value. The
+`ResultMeasureValue` column gets checked for **all** three of the
+following conditions:
+
+1.  Numeric-only version of the column is still `NA` after MDL &
+    approximate cleaning
+2.  The original column text contained a number
+3.  The original column text contained a `>`
+
+We then use the “greater than” value (without `>`) as the record’s value
+moving forward.
+
+This should not result in a change in rows but we still check: 0 rows
+are removed. The final row count after this is 3.08 million.
+
+![](/Users/mbrousil/Documents/Light_Partitioning/chapters/06_tss_harmonization_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
+
+<br>
+
+### 6. Harmonize record units
+
+The next step in TSS harmonization is working with the units of the WQP
 records. These can vary widely. We create the following conversion
 table, which is used to translate units provided in WQP into
 milligrams/L:
@@ -200,38 +223,46 @@ umol/L
 6.008e+01
 </td>
 </tr>
+<tr>
+<td style="text-align:left;">
+g/l
+</td>
+<td style="text-align:right;">
+1.000e+06
+</td>
+</tr>
 </tbody>
 </table>
 
-We also limit values to less than 50 mg/L to ensure realistic data.
-47.11 thousand rows are removed. The final row count after this is 2.03
+We also limit values to less than 1000 mg/L to ensure realistic data.
+133.68 thousand rows are removed. The final row count after this is 2.95
 million.
 
-![](/Users/mbrousil/Documents/Light_Partitioning/chapters/04_doc_harmonization_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
+![](/Users/mbrousil/Documents/Light_Partitioning/chapters/06_tss_harmonization_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
 
 <br>
 
-### 6. Filter based on analytical method
+### 7. Filter based on analytical method
 
-Our next step is to aggregate doc analytical methods into groups and
+Our next step is to aggregate TSS analytical methods into groups and
 then filter out methods that may have been erroneously added, were
-unclear, or which don’t meet our needs. Methods that were `NA` or were
-grouped as `"Ambiguous"` or `"Carbonaceous Analyzer"` are dropped.
+unclear, or which don’t meet our needs. Methods that were grouped as
+`"Ambiguous"` or `"Nonsensical"` are dropped.
 
-This process drops 1032.73 million rows leaving 1 million remaining.
+This process drops 1508.86 million rows leaving 1.44 million remaining.
 
-![](/Users/mbrousil/Documents/Light_Partitioning/chapters/04_doc_harmonization_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
+![](/Users/mbrousil/Documents/Light_Partitioning/chapters/06_tss_harmonization_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
 
 <br>
 
-### 7. Filter based on fraction type
+### 8. Filter based on fraction type
 
-The final step in our doc harmonization is filtering based on the
-`ResultSampleFractionText` column. We keep records with the following
-values in this column: `"Dissolved"`, `"Filtered, lab"`, `"Filterable"`,
-`"Filtered, field"`.
+The final step in our TSS harmonization is filtering based on the
+`ResultSampleFractionText` column. We **drop** records with the
+following values in this column: `"Fixed`“, `"Volatile"`, `"Dissolved"`,
+or `"Acid Soluble"`.
 
-This process drops 657.28 thousand rows leaving 0.34 million remaining
-in the final harmonized doc dataset.
+This process drops 0.15 thousand rows leaving 1.44 million remaining in
+the final harmonized TSS dataset.
 
-![](/Users/mbrousil/Documents/Light_Partitioning/chapters/04_doc_harmonization_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
+![](/Users/mbrousil/Documents/Light_Partitioning/chapters/06_tss_harmonization_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
