@@ -265,12 +265,5 @@ p4_targets_list <- list(
                  scale_color_manual(values = c('seagreen3','skyblue3','saddlebrown'))            
              },
              packages = c("tidyverse", "GGally", "ggthemes")
-  ),
-  
-  tar_render(model_report,
-             "4_analysis/src/model_report.Rmd",
-             packages = c("tidyverse", "lubridate", "feather", "ggpmisc", "Metrics",
-                          "broom", "ggtern", "kableExtra"))
-  
-  
+  )
 )

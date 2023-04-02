@@ -1,17 +1,27 @@
 ---
-title: "Light partitioning modeling report"
-output: html_document
-date: "`r Sys.Date()`"
+output:
+  github_document:
+    html_preview: false
+params:
+  simul: NA
+  simultaneous_data: NA
+  simultaneous_data_strict: NA
+  simul_vis_gg_mr: NA
+  simul_vis_gg: NA
+  simul_vis_gg_strict: NA
+always_allow_html: true
 ---
 
-#### Load dataset options for simultaneous records:
+# Light partitioning modeling report
+
+#### Dataset options for simultaneous records:
 ```{r}
 # MR's original
-tar_load(simul)
+simul <- params$simul
 # Our attempt at recreating MR's data
-tar_load(simultaneous_data)
+simultaneous_data <- params$simultaneous_data
 # A stricter version
-tar_load(simultaneous_data_strict)
+simultaneous_data_strict <- params$simultaneous_data_strict
 ```
 
 ### Overview of simultaneous records
@@ -49,17 +59,17 @@ tldr: We tried to create a perfect, updated match to MR's `simul` dataset but hi
 
 **MR's original dataset**:
 ```{r}
-tar_read(simul_vis_gg_mr)
+simul_vis_gg_mr <- params$simul_vis_gg_mr
 ```
 
 **Our dataset**:
 ```{r}
-tar_read(simul_vis_gg)
+simul_vis_gg <- params$simul_vis_gg
 ```
 
 **Our strict dataset**:
 ```{r}
-tar_read(simul_vis_gg_strict)
+simul_vis_gg_strict <- params$simul_vis_gg_strict
 ```
 
 ```{r include=FALSE}

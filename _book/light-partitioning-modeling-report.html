@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+<head>
+
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>8 Light partitioning modeling report | _main.knit</title>
+  <meta name="description" content="" />
+  <meta name="generator" content="bookdown 0.30 and GitBook 2.6.7" />
+
+  <meta property="og:title" content="8 Light partitioning modeling report | _main.knit" />
+  <meta property="og:type" content="book" />
+  
+  
+  
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="8 Light partitioning modeling report | _main.knit" />
+  
+  
+  
+
+<meta name="author" content="ROSSyndicate" />
+
+
+<meta name="date" content="2023-04-02" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  
+  
+<link rel="prev" href="tss-harmonization-process-strict-version.html"/>
+
+<script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fuse.js@6.4.6/dist/fuse.min.js"></script>
+<link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-table.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-clipboard.css" rel="stylesheet" />
+
+
+
+
+
+
+
+
+<link href="libs/anchor-sections-1.1.0/anchor-sections.css" rel="stylesheet" />
+<link href="libs/anchor-sections-1.1.0/anchor-sections-hash.css" rel="stylesheet" />
+<script src="libs/anchor-sections-1.1.0/anchor-sections.js"></script>
+
+
+<style type="text/css">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { color: #008000; } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { color: #008000; font-weight: bold; } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+
+</head>
+
+<body>
+
+
+
+  <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
+
+    <div class="book-summary">
+      <nav role="navigation">
+
+<ul class="summary">
+<li class="chapter" data-level="1" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i><b>1</b> Light Partitioning</a></li>
+<li class="chapter" data-level="2" data-path="download-process.html"><a href="download-process.html"><i class="fa fa-check"></i><b>2</b> Download process</a>
+<ul>
+<li class="chapter" data-level="2.0.1" data-path="download-process.html"><a href="download-process.html#catalogue-existing-data"><i class="fa fa-check"></i><b>2.0.1</b> Catalogue existing data</a></li>
+<li class="chapter" data-level="2.0.2" data-path="download-process.html"><a href="download-process.html#maps-of-data-spread-within-the-contiguous-us"><i class="fa fa-check"></i><b>2.0.2</b> Maps of data spread within the contiguous US:</a></li>
+</ul></li>
+<li class="chapter" data-level="3" data-path="pre-harmonization-decision-process.html"><a href="pre-harmonization-decision-process.html"><i class="fa fa-check"></i><b>3</b> Pre-harmonization decision process</a>
+<ul>
+<li class="chapter" data-level="3.0.1" data-path="pre-harmonization-decision-process.html"><a href="pre-harmonization-decision-process.html#initial-dataset"><i class="fa fa-check"></i><b>3.0.1</b> 0. Initial dataset</a></li>
+<li class="chapter" data-level="3.0.2" data-path="pre-harmonization-decision-process.html"><a href="pre-harmonization-decision-process.html#remove-duplicates"><i class="fa fa-check"></i><b>3.0.2</b> 1. Remove duplicates</a></li>
+<li class="chapter" data-level="3.0.3" data-path="pre-harmonization-decision-process.html"><a href="pre-harmonization-decision-process.html#missing-results"><i class="fa fa-check"></i><b>3.0.3</b> 2. Missing results</a></li>
+<li class="chapter" data-level="3.0.4" data-path="pre-harmonization-decision-process.html"><a href="pre-harmonization-decision-process.html#filter-status"><i class="fa fa-check"></i><b>3.0.4</b> 2. Filter status</a></li>
+<li class="chapter" data-level="3.0.5" data-path="pre-harmonization-decision-process.html"><a href="pre-harmonization-decision-process.html#filter-media"><i class="fa fa-check"></i><b>3.0.5</b> 3. Filter media</a></li>
+</ul></li>
+<li class="chapter" data-level="4" data-path="chlorophyll-harmonization-process-strict-version.html"><a href="chlorophyll-harmonization-process-strict-version.html"><i class="fa fa-check"></i><b>4</b> Chlorophyll harmonization process (strict version)</a>
+<ul>
+<li class="chapter" data-level="4.0.1" data-path="chlorophyll-harmonization-process-strict-version.html"><a href="chlorophyll-harmonization-process-strict-version.html#initial-dataset-1"><i class="fa fa-check"></i><b>4.0.1</b> 0. Initial dataset</a></li>
+<li class="chapter" data-level="4.0.2" data-path="chlorophyll-harmonization-process-strict-version.html"><a href="chlorophyll-harmonization-process-strict-version.html#filter-for-water-media"><i class="fa fa-check"></i><b>4.0.2</b> 1. Filter for water media</a></li>
+<li class="chapter" data-level="4.0.3" data-path="chlorophyll-harmonization-process-strict-version.html"><a href="chlorophyll-harmonization-process-strict-version.html#keep-only-chlorophyll-parameters"><i class="fa fa-check"></i><b>4.0.3</b> 2. Keep only chlorophyll parameters</a></li>
+<li class="chapter" data-level="4.0.4" data-path="chlorophyll-harmonization-process-strict-version.html"><a href="chlorophyll-harmonization-process-strict-version.html#remove-fails-and-other-missing-data"><i class="fa fa-check"></i><b>4.0.4</b> 3. Remove fails and other missing data</a></li>
+<li class="chapter" data-level="4.0.5" data-path="chlorophyll-harmonization-process-strict-version.html"><a href="chlorophyll-harmonization-process-strict-version.html#clean-mdls"><i class="fa fa-check"></i><b>4.0.5</b> 4. Clean MDLs</a></li>
+<li class="chapter" data-level="4.0.6" data-path="chlorophyll-harmonization-process-strict-version.html"><a href="chlorophyll-harmonization-process-strict-version.html#clean-approximate-values"><i class="fa fa-check"></i><b>4.0.6</b> 5. Clean approximate values</a></li>
+<li class="chapter" data-level="4.0.7" data-path="chlorophyll-harmonization-process-strict-version.html"><a href="chlorophyll-harmonization-process-strict-version.html#clean-values-with-greater-than-data"><i class="fa fa-check"></i><b>4.0.7</b> 6. Clean values with “greater than” data</a></li>
+<li class="chapter" data-level="4.0.8" data-path="chlorophyll-harmonization-process-strict-version.html"><a href="chlorophyll-harmonization-process-strict-version.html#harmonize-record-units"><i class="fa fa-check"></i><b>4.0.8</b> 7. Harmonize record units</a></li>
+<li class="chapter" data-level="4.0.9" data-path="chlorophyll-harmonization-process-strict-version.html"><a href="chlorophyll-harmonization-process-strict-version.html#clean-depth-data"><i class="fa fa-check"></i><b>4.0.9</b> 8. Clean depth data</a></li>
+<li class="chapter" data-level="4.0.10" data-path="chlorophyll-harmonization-process-strict-version.html"><a href="chlorophyll-harmonization-process-strict-version.html#filter-based-on-analytical-method"><i class="fa fa-check"></i><b>4.0.10</b> 9. Filter based on analytical method</a></li>
+<li class="chapter" data-level="4.0.11" data-path="chlorophyll-harmonization-process-strict-version.html"><a href="chlorophyll-harmonization-process-strict-version.html#filter-based-on-fraction-type"><i class="fa fa-check"></i><b>4.0.11</b> 10. Filter based on fraction type</a></li>
+</ul></li>
+<li class="chapter" data-level="5" data-path="doc-harmonization-process-strict-version.html"><a href="doc-harmonization-process-strict-version.html"><i class="fa fa-check"></i><b>5</b> DOC harmonization process (strict version)</a>
+<ul>
+<li class="chapter" data-level="5.0.1" data-path="doc-harmonization-process-strict-version.html"><a href="doc-harmonization-process-strict-version.html#initial-dataset-2"><i class="fa fa-check"></i><b>5.0.1</b> 0. Initial dataset</a></li>
+<li class="chapter" data-level="5.0.2" data-path="doc-harmonization-process-strict-version.html"><a href="doc-harmonization-process-strict-version.html#filter-for-water-media-1"><i class="fa fa-check"></i><b>5.0.2</b> 1. Filter for water media</a></li>
+<li class="chapter" data-level="5.0.3" data-path="doc-harmonization-process-strict-version.html"><a href="doc-harmonization-process-strict-version.html#remove-fails-and-other-missing-data-1"><i class="fa fa-check"></i><b>5.0.3</b> 2. Remove fails and other missing data</a></li>
+<li class="chapter" data-level="5.0.4" data-path="doc-harmonization-process-strict-version.html"><a href="doc-harmonization-process-strict-version.html#clean-mdls-1"><i class="fa fa-check"></i><b>5.0.4</b> 3. Clean MDLs</a></li>
+<li class="chapter" data-level="5.0.5" data-path="doc-harmonization-process-strict-version.html"><a href="doc-harmonization-process-strict-version.html#clean-approximate-values-1"><i class="fa fa-check"></i><b>5.0.5</b> 4. Clean approximate values</a></li>
+<li class="chapter" data-level="5.0.6" data-path="doc-harmonization-process-strict-version.html"><a href="doc-harmonization-process-strict-version.html#harmonize-record-units-1"><i class="fa fa-check"></i><b>5.0.6</b> 5. Harmonize record units</a></li>
+<li class="chapter" data-level="5.0.7" data-path="doc-harmonization-process-strict-version.html"><a href="doc-harmonization-process-strict-version.html#filter-based-on-analytical-method-1"><i class="fa fa-check"></i><b>5.0.7</b> 6. Filter based on analytical method</a></li>
+<li class="chapter" data-level="5.0.8" data-path="doc-harmonization-process-strict-version.html"><a href="doc-harmonization-process-strict-version.html#filter-based-on-fraction-type-1"><i class="fa fa-check"></i><b>5.0.8</b> 7. Filter based on fraction type</a></li>
+</ul></li>
+<li class="chapter" data-level="6" data-path="secchi-harmonization-process-strict-version.html"><a href="secchi-harmonization-process-strict-version.html"><i class="fa fa-check"></i><b>6</b> Secchi harmonization process (strict version)</a>
+<ul>
+<li class="chapter" data-level="6.0.1" data-path="secchi-harmonization-process-strict-version.html"><a href="secchi-harmonization-process-strict-version.html#initial-dataset-3"><i class="fa fa-check"></i><b>6.0.1</b> 0. Initial dataset</a></li>
+<li class="chapter" data-level="6.0.2" data-path="secchi-harmonization-process-strict-version.html"><a href="secchi-harmonization-process-strict-version.html#filter-for-water-media-2"><i class="fa fa-check"></i><b>6.0.2</b> 1. Filter for water media</a></li>
+<li class="chapter" data-level="6.0.3" data-path="secchi-harmonization-process-strict-version.html"><a href="secchi-harmonization-process-strict-version.html#remove-fails-and-other-missing-data-2"><i class="fa fa-check"></i><b>6.0.3</b> 2. Remove fails and other missing data</a></li>
+<li class="chapter" data-level="6.0.4" data-path="secchi-harmonization-process-strict-version.html"><a href="secchi-harmonization-process-strict-version.html#clean-mdls-2"><i class="fa fa-check"></i><b>6.0.4</b> 3. Clean MDLs</a></li>
+<li class="chapter" data-level="6.0.5" data-path="secchi-harmonization-process-strict-version.html"><a href="secchi-harmonization-process-strict-version.html#clean-approximate-values-2"><i class="fa fa-check"></i><b>6.0.5</b> 4. Clean approximate values</a></li>
+<li class="chapter" data-level="6.0.6" data-path="secchi-harmonization-process-strict-version.html"><a href="secchi-harmonization-process-strict-version.html#clean-values-with-greater-than-data-1"><i class="fa fa-check"></i><b>6.0.6</b> 5. Clean values with “greater than” data</a></li>
+<li class="chapter" data-level="6.0.7" data-path="secchi-harmonization-process-strict-version.html"><a href="secchi-harmonization-process-strict-version.html#harmonize-record-units-2"><i class="fa fa-check"></i><b>6.0.7</b> 6. Harmonize record units</a></li>
+<li class="chapter" data-level="6.0.8" data-path="secchi-harmonization-process-strict-version.html"><a href="secchi-harmonization-process-strict-version.html#filter-based-on-analytical-method-2"><i class="fa fa-check"></i><b>6.0.8</b> 7. Filter based on analytical method</a></li>
+<li class="chapter" data-level="6.0.9" data-path="secchi-harmonization-process-strict-version.html"><a href="secchi-harmonization-process-strict-version.html#filter-based-on-fraction-type-2"><i class="fa fa-check"></i><b>6.0.9</b> 8. Filter based on fraction type</a></li>
+<li class="chapter" data-level="6.0.10" data-path="secchi-harmonization-process-strict-version.html"><a href="secchi-harmonization-process-strict-version.html#filter-based-on-sample-method"><i class="fa fa-check"></i><b>6.0.10</b> 9. Filter based on sample method</a></li>
+<li class="chapter" data-level="6.0.11" data-path="secchi-harmonization-process-strict-version.html"><a href="secchi-harmonization-process-strict-version.html#filter-based-on-collection-equipment"><i class="fa fa-check"></i><b>6.0.11</b> 10. Filter based on collection equipment</a></li>
+</ul></li>
+<li class="chapter" data-level="7" data-path="tss-harmonization-process-strict-version.html"><a href="tss-harmonization-process-strict-version.html"><i class="fa fa-check"></i><b>7</b> TSS harmonization process (strict version)</a>
+<ul>
+<li class="chapter" data-level="7.0.1" data-path="tss-harmonization-process-strict-version.html"><a href="tss-harmonization-process-strict-version.html#initial-dataset-4"><i class="fa fa-check"></i><b>7.0.1</b> 0. Initial dataset</a></li>
+<li class="chapter" data-level="7.0.2" data-path="tss-harmonization-process-strict-version.html"><a href="tss-harmonization-process-strict-version.html#filter-for-water-media-3"><i class="fa fa-check"></i><b>7.0.2</b> 1. Filter for water media</a></li>
+<li class="chapter" data-level="7.0.3" data-path="tss-harmonization-process-strict-version.html"><a href="tss-harmonization-process-strict-version.html#remove-fails-and-other-missing-data-3"><i class="fa fa-check"></i><b>7.0.3</b> 2. Remove fails and other missing data</a></li>
+<li class="chapter" data-level="7.0.4" data-path="tss-harmonization-process-strict-version.html"><a href="tss-harmonization-process-strict-version.html#clean-mdls-3"><i class="fa fa-check"></i><b>7.0.4</b> 3. Clean MDLs</a></li>
+<li class="chapter" data-level="7.0.5" data-path="tss-harmonization-process-strict-version.html"><a href="tss-harmonization-process-strict-version.html#clean-approximate-values-3"><i class="fa fa-check"></i><b>7.0.5</b> 4. Clean approximate values</a></li>
+<li class="chapter" data-level="7.0.6" data-path="tss-harmonization-process-strict-version.html"><a href="tss-harmonization-process-strict-version.html#clean-values-with-greater-than-data-2"><i class="fa fa-check"></i><b>7.0.6</b> 5. Clean values with “greater than” data</a></li>
+<li class="chapter" data-level="7.0.7" data-path="tss-harmonization-process-strict-version.html"><a href="tss-harmonization-process-strict-version.html#harmonize-record-units-3"><i class="fa fa-check"></i><b>7.0.7</b> 6. Harmonize record units</a></li>
+<li class="chapter" data-level="7.0.8" data-path="tss-harmonization-process-strict-version.html"><a href="tss-harmonization-process-strict-version.html#filter-based-on-analytical-method-3"><i class="fa fa-check"></i><b>7.0.8</b> 7. Filter based on analytical method</a></li>
+<li class="chapter" data-level="7.0.9" data-path="tss-harmonization-process-strict-version.html"><a href="tss-harmonization-process-strict-version.html#filter-based-on-fraction-type-3"><i class="fa fa-check"></i><b>7.0.9</b> 8. Filter based on fraction type</a></li>
+</ul></li>
+<li class="chapter" data-level="8" data-path="light-partitioning-modeling-report.html"><a href="light-partitioning-modeling-report.html"><i class="fa fa-check"></i><b>8</b> Light partitioning modeling report</a>
+<ul>
+<li class="chapter" data-level="8.0.1" data-path="light-partitioning-modeling-report.html"><a href="light-partitioning-modeling-report.html#overview-of-simultaneous-records"><i class="fa fa-check"></i><b>8.0.1</b> Overview of simultaneous records</a></li>
+<li class="chapter" data-level="8.0.2" data-path="light-partitioning-modeling-report.html"><a href="light-partitioning-modeling-report.html#comparisons-against-mrs-aquasat-1-version"><i class="fa fa-check"></i><b>8.0.2</b> Comparisons against MR’s AquaSat 1 version:</a></li>
+<li class="chapter" data-level="8.0.3" data-path="light-partitioning-modeling-report.html"><a href="light-partitioning-modeling-report.html#modeling"><i class="fa fa-check"></i><b>8.0.3</b> Modeling</a></li>
+</ul></li>
+</ul>
+
+      </nav>
+    </div>
+
+    <div class="book-body">
+      <div class="body-inner">
+        <div class="book-header" role="navigation">
+          <h1>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./"></a>
+          </h1>
+        </div>
+
+        <div class="page-wrapper" tabindex="-1" role="main">
+          <div class="page-inner">
+
+            <section class="normal" id="section-">
+<div id="light-partitioning-modeling-report" class="section level1 hasAnchor" number="8">
+<h1><span class="header-section-number">8</span> Light partitioning modeling report<a href="light-partitioning-modeling-report.html#light-partitioning-modeling-report" class="anchor-section" aria-label="Anchor link to header"></a></h1>
+<div id="dataset-options-for-simultaneous-records" class="section level4 hasAnchor" number="8.0.0.1">
+<h4><span class="header-section-number">8.0.0.1</span> Dataset options for simultaneous records:<a href="light-partitioning-modeling-report.html#dataset-options-for-simultaneous-records" class="anchor-section" aria-label="Anchor link to header"></a></h4>
+<details class=chunk-details><summary class=chunk-summary><span class=chunk-summary-text>Code</span></summary>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="light-partitioning-modeling-report.html#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># MR&#39;s original</span></span>
+<span id="cb6-2"><a href="light-partitioning-modeling-report.html#cb6-2" aria-hidden="true" tabindex="-1"></a>simul <span class="ot">&lt;-</span> params<span class="sc">$</span>simul</span>
+<span id="cb6-3"><a href="light-partitioning-modeling-report.html#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Our attempt at recreating MR&#39;s data</span></span>
+<span id="cb6-4"><a href="light-partitioning-modeling-report.html#cb6-4" aria-hidden="true" tabindex="-1"></a>simultaneous_data <span class="ot">&lt;-</span> params<span class="sc">$</span>simultaneous_data</span>
+<span id="cb6-5"><a href="light-partitioning-modeling-report.html#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="co"># A stricter version</span></span>
+<span id="cb6-6"><a href="light-partitioning-modeling-report.html#cb6-6" aria-hidden="true" tabindex="-1"></a>simultaneous_data_strict <span class="ot">&lt;-</span> params<span class="sc">$</span>simultaneous_data_strict</span></code></pre></div>
+</details>
+</div>
+<div id="overview-of-simultaneous-records" class="section level3 hasAnchor" number="8.0.1">
+<h3><span class="header-section-number">8.0.1</span> Overview of simultaneous records<a href="light-partitioning-modeling-report.html#overview-of-simultaneous-records" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<div id="differences-in-number-of-rows" class="section level4 hasAnchor" number="8.0.1.1">
+<h4><span class="header-section-number">8.0.1.1</span> Differences in number of rows:<a href="light-partitioning-modeling-report.html#differences-in-number-of-rows" class="anchor-section" aria-label="Anchor link to header"></a></h4>
+<p>The <strong>original</strong> simultaneous Light Partitioning dataset based on
+AquaSat downloads and MR’s scripts has 100,853 records. <strong>Our attempt</strong>
+at achieving a similar number of rows using the current version of the
+WQP harmonization workflow contains 55,675 records. A <strong>stricter</strong>
+version of our dataset contains 25,588 records.</p>
+<p>Most decisions regarding harmonization choices and filtering for the two
+more current datasets can be found in
+<code>3_harmonize/src/clean_wqp_data.R</code>,
+<code>3_harmonize/src/harmonize_[param].R</code>, and similarly named functions
+with <code>_strict</code> appended for the version used on the stricter dataset.</p>
+<p>The stricter of our two datasets contains a few more filters than the
+other datasets:</p>
+<ol style="list-style-type: decimal">
+<li>While cleaning the raw WQP data for later use, missing rows are
+removed. This likely has little to no effect on the dataset given
+that downstream steps should remove most or all of these</li>
+<li>DOC: Michael Meyer’s “inclusive” tier of analytical methods is
+dropped from this version. This and other tiering match tables will
+be included as csv files</li>
+<li>SDD: Matt Brousil’s “unlikely” grouping for sampling methods is
+dropped from this version. The same grouping is dropped from
+collection equipment as well</li>
+<li>TSS: Katie Willi’s “ambiguous” tiers for analytical methods are
+dropped from this version</li>
+</ol>
+<p><br></p>
+</div>
+<div id="differences-between-the-the-two-larger-datasets" class="section level4 hasAnchor" number="8.0.1.2">
+<h4><span class="header-section-number">8.0.1.2</span> Differences between the the two larger datasets:<a href="light-partitioning-modeling-report.html#differences-between-the-the-two-larger-datasets" class="anchor-section" aria-label="Anchor link to header"></a></h4>
+<p>MR’s dataset (<code>simul</code>) and our attempt at recreating it
+(<code>simultaneous_data</code>) do not match in size.</p>
+<p>While investigating the reason behind this, MRB found ~1.4 million
+site-date-parameter combinations in MR’s <code>wqp_lagos_unity.csv</code> download,
+after removing LAGOS, that we don’t have in our raw WQP download using
+the current workflow method. Of those 1.4 million combos we don’t have
+the parameter breakdown is: chla 34k, doc 33k sdd 92k, tss 1.2 million.</p>
+<p>Within the 1.4 million missing combinations, 7.7k - 15.1k are sites we
+don’t have at all in our WQP download. This range is due to some
+uncertainty from us intentionally dropping one of the tss
+<code>CharacteristicName</code>s. We’re unfortunately limited in how much we can
+dig into the dataset differences further. It would take more time to
+understand how the original AquaSat’s WQP querying process differs from
+the USGS method we’ve based our pipeline on. The original dataset
+downloaded for MR’s version has also been processed to the point where
+many columns that would help with comparing versions have been dropped.</p>
+<p>KW did a quick download of the four parameters from WQP using her own
+method and found that her number of records still differed from MR’s.</p>
+<p>tldr: We tried to create a perfect, updated match to MR’s <code>simul</code>
+dataset but hit a wall.</p>
+<p><br></p>
+</div>
+<div id="maps-of-current-records" class="section level4 hasAnchor" number="8.0.1.3">
+<h4><span class="header-section-number">8.0.1.3</span> Maps of current records<a href="light-partitioning-modeling-report.html#maps-of-current-records" class="anchor-section" aria-label="Anchor link to header"></a></h4>
+<p><strong>MR’s original dataset</strong>:</p>
+<details class=chunk-details><summary class=chunk-summary><span class=chunk-summary-text>Code</span></summary>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="light-partitioning-modeling-report.html#cb7-1" aria-hidden="true" tabindex="-1"></a>simul_vis_gg_mr <span class="ot">&lt;-</span> params<span class="sc">$</span>simul_vis_gg_mr</span></code></pre></div>
+</details>
+<p><strong>Our dataset</strong>:</p>
+<details class=chunk-details><summary class=chunk-summary><span class=chunk-summary-text>Code</span></summary>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="light-partitioning-modeling-report.html#cb8-1" aria-hidden="true" tabindex="-1"></a>simul_vis_gg <span class="ot">&lt;-</span> params<span class="sc">$</span>simul_vis_gg</span></code></pre></div>
+</details>
+<p><strong>Our strict dataset</strong>:</p>
+<details class=chunk-details><summary class=chunk-summary><span class=chunk-summary-text>Code</span></summary>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="light-partitioning-modeling-report.html#cb9-1" aria-hidden="true" tabindex="-1"></a>simul_vis_gg_strict <span class="ot">&lt;-</span> params<span class="sc">$</span>simul_vis_gg_strict</span></code></pre></div>
+</details>
+</div>
+</div>
+<div id="comparisons-against-mrs-aquasat-1-version" class="section level3 hasAnchor" number="8.0.2">
+<h3><span class="header-section-number">8.0.2</span> Comparisons against MR’s AquaSat 1 version:<a href="light-partitioning-modeling-report.html#comparisons-against-mrs-aquasat-1-version" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<div id="parameter-distributions" class="section level4 hasAnchor" number="8.0.2.1">
+<h4><span class="header-section-number">8.0.2.1</span> Parameter distributions<a href="light-partitioning-modeling-report.html#parameter-distributions" class="anchor-section" aria-label="Anchor link to header"></a></h4>
+<p><strong>MR’s original dataset</strong>:</p>
+<p><img src="chapters/07_modeling_report_files/figure-gfm/unnamed-chunk-6-1.png" /><!-- --></p>
+<p><strong>Our dataset</strong>:</p>
+<p><img src="chapters/07_modeling_report_files/figure-gfm/unnamed-chunk-7-1.png" /><!-- --></p>
+<p><strong>Our strict dataset</strong>:</p>
+<p><img src="chapters/07_modeling_report_files/figure-gfm/unnamed-chunk-8-1.png" /><!-- --></p>
+<strong>Comparison table</strong>:
+<table class=" lightable-paper" style="font-family: &quot;Arial Narrow&quot;, arial, helvetica, sans-serif; margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:left;">
+parameter
+</th>
+<th style="text-align:left;">
+dataset
+</th>
+<th style="text-align:right;">
+mean_val
+</th>
+<th style="text-align:right;">
+sd_val
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+chla
+</td>
+<td style="text-align:left;">
+Current dataset
+</td>
+<td style="text-align:right;">
+22.38
+</td>
+<td style="text-align:right;">
+38.95
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+chla
+</td>
+<td style="text-align:left;">
+MR simul
+</td>
+<td style="text-align:right;">
+19.74
+</td>
+<td style="text-align:right;">
+33.55
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+chla
+</td>
+<td style="text-align:left;">
+Strict dataset
+</td>
+<td style="text-align:right;">
+18.95
+</td>
+<td style="text-align:right;">
+32.43
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+doc
+</td>
+<td style="text-align:left;">
+Current dataset
+</td>
+<td style="text-align:right;">
+11.02
+</td>
+<td style="text-align:right;">
+9.04
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+doc
+</td>
+<td style="text-align:left;">
+MR simul
+</td>
+<td style="text-align:right;">
+8.59
+</td>
+<td style="text-align:right;">
+7.85
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+doc
+</td>
+<td style="text-align:left;">
+Strict dataset
+</td>
+<td style="text-align:right;">
+10.54
+</td>
+<td style="text-align:right;">
+8.89
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+secchi
+</td>
+<td style="text-align:left;">
+Current dataset
+</td>
+<td style="text-align:right;">
+0.92
+</td>
+<td style="text-align:right;">
+0.86
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+secchi
+</td>
+<td style="text-align:left;">
+MR simul
+</td>
+<td style="text-align:right;">
+0.95
+</td>
+<td style="text-align:right;">
+0.78
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+secchi
+</td>
+<td style="text-align:left;">
+Strict dataset
+</td>
+<td style="text-align:right;">
+0.94
+</td>
+<td style="text-align:right;">
+0.80
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+tss
+</td>
+<td style="text-align:left;">
+Current dataset
+</td>
+<td style="text-align:right;">
+20.80
+</td>
+<td style="text-align:right;">
+32.08
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+tss
+</td>
+<td style="text-align:left;">
+MR simul
+</td>
+<td style="text-align:right;">
+21.02
+</td>
+<td style="text-align:right;">
+30.29
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+tss
+</td>
+<td style="text-align:left;">
+Strict dataset
+</td>
+<td style="text-align:right;">
+19.62
+</td>
+<td style="text-align:right;">
+31.68
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="modeling" class="section level3 hasAnchor" number="8.0.3">
+<h3><span class="header-section-number">8.0.3</span> Modeling<a href="light-partitioning-modeling-report.html#modeling" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>We’ll run the linear model with all three versions of the dataset. The
+code below is adapted from MR’s scripts.</p>
+<details class=chunk-details><summary class=chunk-summary><span class=chunk-summary-text>Code</span></summary>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="light-partitioning-modeling-report.html#cb10-1" aria-hidden="true" tabindex="-1"></a>range_val <span class="ot">&lt;-</span> <span class="dv">234</span></span>
+<span id="cb10-2"><a href="light-partitioning-modeling-report.html#cb10-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-3"><a href="light-partitioning-modeling-report.html#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Multiply chla by 234</span></span>
+<span id="cb10-4"><a href="light-partitioning-modeling-report.html#cb10-4" aria-hidden="true" tabindex="-1"></a>nap_test <span class="ot">&lt;-</span> <span class="fu">map</span>(<span class="at">.x =</span> <span class="fu">list</span>(<span class="at">simul =</span> <span class="fu">rename</span>(simul, <span class="at">chla =</span> chl_a),</span>
+<span id="cb10-5"><a href="light-partitioning-modeling-report.html#cb10-5" aria-hidden="true" tabindex="-1"></a>                          <span class="at">simultaneous_data =</span> simultaneous_data,</span>
+<span id="cb10-6"><a href="light-partitioning-modeling-report.html#cb10-6" aria-hidden="true" tabindex="-1"></a>                          <span class="at">simultaneous_data_strict =</span> simultaneous_data_strict),</span>
+<span id="cb10-7"><a href="light-partitioning-modeling-report.html#cb10-7" aria-hidden="true" tabindex="-1"></a>                <span class="at">.f =</span> <span class="sc">~</span> <span class="fu">expand_grid</span>(.x, <span class="at">chl_ratio =</span> range_val) <span class="sc">%&gt;%</span></span>
+<span id="cb10-8"><a href="light-partitioning-modeling-report.html#cb10-8" aria-hidden="true" tabindex="-1"></a>                  <span class="fu">mutate</span>(<span class="at">power =</span> <span class="fu">ifelse</span>(chl_ratio <span class="sc">==</span> <span class="dv">234</span>, <span class="fl">0.57</span>, <span class="dv">1</span>),</span>
+<span id="cb10-9"><a href="light-partitioning-modeling-report.html#cb10-9" aria-hidden="true" tabindex="-1"></a>                         <span class="at">chla_biomass =</span> <span class="fu">exp</span>(<span class="fu">log</span>(chl_ratio <span class="sc">/</span> <span class="dv">1000</span>) <span class="sc">+</span> <span class="fu">log</span>(chla) <span class="sc">*</span> power),</span>
+<span id="cb10-10"><a href="light-partitioning-modeling-report.html#cb10-10" aria-hidden="true" tabindex="-1"></a>                         <span class="at">tss_dead =</span> tss <span class="sc">-</span> chla_biomass))</span></code></pre></div>
+</details>
+<pre><code>## Warning in log(chla): NaNs produced
+
+## Warning in log(chla): NaNs produced</code></pre>
+<details class=chunk-details><summary class=chunk-summary><span class=chunk-summary-text>Code</span></summary>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="light-partitioning-modeling-report.html#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">map</span>(<span class="at">.x =</span> nap_test,</span>
+<span id="cb12-2"><a href="light-partitioning-modeling-report.html#cb12-2" aria-hidden="true" tabindex="-1"></a>    <span class="at">.f =</span> <span class="sc">~</span> .x <span class="sc">%&gt;%</span></span>
+<span id="cb12-3"><a href="light-partitioning-modeling-report.html#cb12-3" aria-hidden="true" tabindex="-1"></a>      <span class="co">#Remove negatives and very small numbers (ug/L of sediment is basically zero)</span></span>
+<span id="cb12-4"><a href="light-partitioning-modeling-report.html#cb12-4" aria-hidden="true" tabindex="-1"></a>      <span class="fu">filter</span>(tss_dead <span class="sc">&gt;</span> <span class="fl">0.001</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb12-5"><a href="light-partitioning-modeling-report.html#cb12-5" aria-hidden="true" tabindex="-1"></a>      <span class="co"># sample_frac(0.1) %&gt;%</span></span>
+<span id="cb12-6"><a href="light-partitioning-modeling-report.html#cb12-6" aria-hidden="true" tabindex="-1"></a>      <span class="fu">ggplot</span>(., <span class="fu">aes</span>(chla,tss_dead,<span class="at">color =</span> type)) <span class="sc">+</span></span>
+<span id="cb12-7"><a href="light-partitioning-modeling-report.html#cb12-7" aria-hidden="true" tabindex="-1"></a>      <span class="fu">facet_wrap</span>(<span class="sc">~</span>chl_ratio) <span class="sc">+</span> </span>
+<span id="cb12-8"><a href="light-partitioning-modeling-report.html#cb12-8" aria-hidden="true" tabindex="-1"></a>      <span class="fu">geom_point</span>() <span class="sc">+</span> </span>
+<span id="cb12-9"><a href="light-partitioning-modeling-report.html#cb12-9" aria-hidden="true" tabindex="-1"></a>      <span class="fu">scale_x_log10</span>() <span class="sc">+</span> </span>
+<span id="cb12-10"><a href="light-partitioning-modeling-report.html#cb12-10" aria-hidden="true" tabindex="-1"></a>      <span class="fu">scale_y_log10</span>() <span class="sc">+</span> </span>
+<span id="cb12-11"><a href="light-partitioning-modeling-report.html#cb12-11" aria-hidden="true" tabindex="-1"></a>      <span class="fu">stat_poly_eq</span>() <span class="sc">+</span> </span>
+<span id="cb12-12"><a href="light-partitioning-modeling-report.html#cb12-12" aria-hidden="true" tabindex="-1"></a>      ggthemes<span class="sc">::</span><span class="fu">theme_few</span>() <span class="sc">+</span> </span>
+<span id="cb12-13"><a href="light-partitioning-modeling-report.html#cb12-13" aria-hidden="true" tabindex="-1"></a>      <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">&#39;seagreen3&#39;</span>,<span class="st">&#39;skyblue3&#39;</span>,<span class="st">&#39;saddlebrown&#39;</span>)))</span></code></pre></div>
+</details>
+<pre><code>## $simul</code></pre>
+<p><img src="chapters/07_modeling_report_files/figure-gfm/unnamed-chunk-11-1.png" /><!-- --></p>
+<pre><code>## 
+## $simultaneous_data
+
+## Warning: [1m[22mTransformation introduced infinite values in continuous x-axis
+## [1m[22mTransformation introduced infinite values in continuous x-axis
+
+## Warning: [1m[22mRemoved 132 rows containing non-finite values
+## (`stat_poly_eq()`).</code></pre>
+<p><img src="chapters/07_modeling_report_files/figure-gfm/unnamed-chunk-11-2.png" /><!-- --></p>
+<pre><code>## 
+## $simultaneous_data_strict
+
+## Warning: [1m[22mTransformation introduced infinite values in continuous x-axis
+
+## Warning: [1m[22mTransformation introduced infinite values in continuous x-axis
+
+## Warning: [1m[22mRemoved 18 rows containing non-finite values (`stat_poly_eq()`).</code></pre>
+<p><img src="chapters/07_modeling_report_files/figure-gfm/unnamed-chunk-11-3.png" /><!-- --></p>
+<details class=chunk-details><summary class=chunk-summary><span class=chunk-summary-text>Code</span></summary>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="light-partitioning-modeling-report.html#cb16-1" aria-hidden="true" tabindex="-1"></a>nap_est <span class="ot">&lt;-</span> <span class="fu">map</span>(<span class="at">.x =</span> nap_test,</span>
+<span id="cb16-2"><a href="light-partitioning-modeling-report.html#cb16-2" aria-hidden="true" tabindex="-1"></a>               <span class="at">.f =</span> <span class="sc">~</span> .x <span class="sc">%&gt;%</span></span>
+<span id="cb16-3"><a href="light-partitioning-modeling-report.html#cb16-3" aria-hidden="true" tabindex="-1"></a>                 <span class="fu">filter</span>(tss_dead <span class="sc">&gt;</span> <span class="fl">0.001</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb16-4"><a href="light-partitioning-modeling-report.html#cb16-4" aria-hidden="true" tabindex="-1"></a>                 <span class="fu">mutate</span>(<span class="at">secchi =</span> <span class="fu">ifelse</span>(secchi <span class="sc">&lt;</span> <span class="fl">0.01</span>, <span class="fl">0.01</span>, secchi),</span>
+<span id="cb16-5"><a href="light-partitioning-modeling-report.html#cb16-5" aria-hidden="true" tabindex="-1"></a>                        <span class="at">kd =</span> (<span class="dv">1</span> <span class="sc">/</span> secchi)))</span></code></pre></div>
+</details>
+<details class=chunk-details><summary class=chunk-summary><span class=chunk-summary-text>Code</span></summary>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="light-partitioning-modeling-report.html#cb17-1" aria-hidden="true" tabindex="-1"></a>model <span class="ot">&lt;-</span> <span class="fu">map</span>(<span class="at">.x =</span> nap_est,</span>
+<span id="cb17-2"><a href="light-partitioning-modeling-report.html#cb17-2" aria-hidden="true" tabindex="-1"></a>             <span class="at">.f =</span> <span class="sc">~</span> <span class="fu">lm</span>(kd <span class="sc">~</span> tss_dead <span class="sc">+</span> doc <span class="sc">+</span> chla, <span class="at">data =</span> .x))</span>
+<span id="cb17-3"><a href="light-partitioning-modeling-report.html#cb17-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-4"><a href="light-partitioning-modeling-report.html#cb17-4" aria-hidden="true" tabindex="-1"></a>nap_resid <span class="ot">&lt;-</span> <span class="fu">map2</span>(<span class="at">.x =</span> nap_est,</span>
+<span id="cb17-5"><a href="light-partitioning-modeling-report.html#cb17-5" aria-hidden="true" tabindex="-1"></a>                  <span class="at">.y =</span> model,</span>
+<span id="cb17-6"><a href="light-partitioning-modeling-report.html#cb17-6" aria-hidden="true" tabindex="-1"></a>                  <span class="at">.f =</span> <span class="sc">~</span> .x <span class="sc">%&gt;%</span></span>
+<span id="cb17-7"><a href="light-partitioning-modeling-report.html#cb17-7" aria-hidden="true" tabindex="-1"></a>                    <span class="fu">mutate</span>(<span class="at">residuals =</span> .y<span class="sc">$</span>residuals,</span>
+<span id="cb17-8"><a href="light-partitioning-modeling-report.html#cb17-8" aria-hidden="true" tabindex="-1"></a>                           <span class="at">pred =</span> .y<span class="sc">$</span>fitted.values))</span>
+<span id="cb17-9"><a href="light-partitioning-modeling-report.html#cb17-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-10"><a href="light-partitioning-modeling-report.html#cb17-10" aria-hidden="true" tabindex="-1"></a>model_metrics <span class="ot">&lt;-</span> <span class="fu">pmap_df</span>(<span class="at">.l =</span> <span class="fu">list</span>(<span class="at">nap_resid =</span> nap_resid,</span>
+<span id="cb17-11"><a href="light-partitioning-modeling-report.html#cb17-11" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">name =</span> <span class="fu">names</span>(nap_resid),</span>
+<span id="cb17-12"><a href="light-partitioning-modeling-report.html#cb17-12" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">model =</span> model),</span>
+<span id="cb17-13"><a href="light-partitioning-modeling-report.html#cb17-13" aria-hidden="true" tabindex="-1"></a>                         <span class="at">.f =</span> <span class="cf">function</span>(nap_resid, name, model){</span>
+<span id="cb17-14"><a href="light-partitioning-modeling-report.html#cb17-14" aria-hidden="true" tabindex="-1"></a>                           dataset <span class="ot">&lt;-</span> name</span>
+<span id="cb17-15"><a href="light-partitioning-modeling-report.html#cb17-15" aria-hidden="true" tabindex="-1"></a>                           rmse <span class="ot">&lt;-</span> <span class="fu">round</span>(<span class="fu">rmse</span>(nap_resid<span class="sc">$</span>kd, nap_resid<span class="sc">$</span>pred), <span class="dv">2</span>)</span>
+<span id="cb17-16"><a href="light-partitioning-modeling-report.html#cb17-16" aria-hidden="true" tabindex="-1"></a>                           adj_rsq <span class="ot">&lt;-</span> <span class="fu">round</span>(<span class="fu">unlist</span>(<span class="fu">summary</span>(model)[<span class="st">&quot;adj.r.squared&quot;</span>][<span class="dv">1</span>]), <span class="dv">2</span>)</span>
+<span id="cb17-17"><a href="light-partitioning-modeling-report.html#cb17-17" aria-hidden="true" tabindex="-1"></a>                           </span>
+<span id="cb17-18"><a href="light-partitioning-modeling-report.html#cb17-18" aria-hidden="true" tabindex="-1"></a>                           <span class="fu">tibble</span>(<span class="at">dataset =</span> dataset,</span>
+<span id="cb17-19"><a href="light-partitioning-modeling-report.html#cb17-19" aria-hidden="true" tabindex="-1"></a>                                  <span class="at">rmse =</span> rmse,</span>
+<span id="cb17-20"><a href="light-partitioning-modeling-report.html#cb17-20" aria-hidden="true" tabindex="-1"></a>                                  <span class="at">adj_rsq =</span> adj_rsq)</span>
+<span id="cb17-21"><a href="light-partitioning-modeling-report.html#cb17-21" aria-hidden="true" tabindex="-1"></a>                         })</span>
+<span id="cb17-22"><a href="light-partitioning-modeling-report.html#cb17-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-23"><a href="light-partitioning-modeling-report.html#cb17-23" aria-hidden="true" tabindex="-1"></a>model_metrics <span class="sc">%&gt;%</span></span>
+<span id="cb17-24"><a href="light-partitioning-modeling-report.html#cb17-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(<span class="at">x =</span> .,</span>
+<span id="cb17-25"><a href="light-partitioning-modeling-report.html#cb17-25" aria-hidden="true" tabindex="-1"></a>            <span class="at">y =</span> <span class="fu">tibble</span>(</span>
+<span id="cb17-26"><a href="light-partitioning-modeling-report.html#cb17-26" aria-hidden="true" tabindex="-1"></a>              <span class="at">dataset =</span> <span class="fu">c</span>(<span class="st">&quot;simul&quot;</span>, <span class="st">&quot;simultaneous_data&quot;</span>, <span class="st">&quot;simultaneous_data_strict&quot;</span>),</span>
+<span id="cb17-27"><a href="light-partitioning-modeling-report.html#cb17-27" aria-hidden="true" tabindex="-1"></a>              <span class="at">rows =</span> <span class="fu">c</span>(<span class="fu">nrow</span>(simul), <span class="fu">nrow</span>(simultaneous_data), <span class="fu">nrow</span>(simultaneous_data_strict))),</span>
+<span id="cb17-28"><a href="light-partitioning-modeling-report.html#cb17-28" aria-hidden="true" tabindex="-1"></a>            <span class="at">by =</span> <span class="fu">c</span>(<span class="st">&quot;dataset&quot;</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb17-29"><a href="light-partitioning-modeling-report.html#cb17-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb17-30"><a href="light-partitioning-modeling-report.html#cb17-30" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable_paper</span>()</span></code></pre></div>
+</details>
+<table class=" lightable-paper" style="font-family: &quot;Arial Narrow&quot;, arial, helvetica, sans-serif; margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:left;">
+dataset
+</th>
+<th style="text-align:right;">
+rmse
+</th>
+<th style="text-align:right;">
+adj_rsq
+</th>
+<th style="text-align:right;">
+rows
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+simul
+</td>
+<td style="text-align:right;">
+1.96
+</td>
+<td style="text-align:right;">
+0.16
+</td>
+<td style="text-align:right;">
+100853
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+simultaneous_data
+</td>
+<td style="text-align:right;">
+1.85
+</td>
+<td style="text-align:right;">
+0.23
+</td>
+<td style="text-align:right;">
+55675
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+simultaneous_data_strict
+</td>
+<td style="text-align:right;">
+1.32
+</td>
+<td style="text-align:right;">
+0.36
+</td>
+<td style="text-align:right;">
+25588
+</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+<a href="tss-harmonization-process-strict-version.html" class="navigation navigation-prev navigation-unique" aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+
+    </div>
+  </div>
+<script src="libs/gitbook-2.6.7/js/app.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/clipboard.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
+<script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-clipboard.js"></script>
+<script>
+gitbook.require(["gitbook"], function(gitbook) {
+gitbook.start({
+"sharing": {
+"github": false,
+"facebook": true,
+"twitter": true,
+"linkedin": false,
+"weibo": false,
+"instapaper": false,
+"vk": false,
+"whatsapp": false,
+"all": ["facebook", "twitter", "linkedin", "weibo", "instapaper"]
+},
+"fontsettings": {
+"theme": "white",
+"family": "sans",
+"size": 2
+},
+"edit": {
+"link": null,
+"text": null
+},
+"history": {
+"link": null,
+"text": null
+},
+"view": {
+"link": null,
+"text": null
+},
+"download": null,
+"search": {
+"engine": "fuse",
+"options": null
+},
+"toc": {
+"collapse": "subsection"
+}
+});
+});
+</script>
+
+</body>
+
+</html>

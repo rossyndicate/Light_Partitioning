@@ -15,7 +15,8 @@ tar_source(files = c(
   "1_inventory.R",
   "2_download.R",
   "3_harmonize.R",
-  "4_analysis.R"))
+  "4_analysis.R",
+  "create_bookdown.R"))
 
 # The list of targets/steps (these steps from MRB)
 config_targets <- list(
@@ -66,5 +67,6 @@ config_targets <- list(
 
 # Full targets list
 c(config_targets,
-  p1_targets_list, p2_targets_list, p3_targets_list, p4_targets_list)
+  p1_targets_list, p2_targets_list, p3_targets_list, p4_targets_list,
+  bookdown_targets_list)
 

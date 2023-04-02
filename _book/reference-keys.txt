@@ -52,3 +52,12 @@ clean-values-with-greater-than-data-2
 harmonize-record-units-3
 filter-based-on-analytical-method-3
 filter-based-on-fraction-type-3
+light-partitioning-modeling-report
+dataset-options-for-simultaneous-records
+overview-of-simultaneous-records
+differences-in-number-of-rows
+differences-between-the-the-two-larger-datasets
+maps-of-current-records
+comparisons-against-mrs-aquasat-1-version
+parameter-distributions
+modeling
