@@ -35,3 +35,6 @@
   tss:
     - "Total suspended solids"
     - "Total Suspended Particulate Matter"
+    
+  temperature:
+    - "Temperature, water"

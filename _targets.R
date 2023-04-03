@@ -6,7 +6,8 @@ library(tarchetypes)
 
 # Set target options:
 tar_option_set(
-  packages = c("tidyverse")
+  packages = c("tidyverse"),
+  error = "continue"
 )
 
 # Run the R scripts with custom functions:
@@ -14,7 +15,8 @@ tar_source(files = c(
   "1_inventory.R",
   "2_download.R",
   "3_harmonize.R",
-  "4_analysis.R"))
+  "4_analysis.R",
+  "create_bookdown.R"))
 
 # The list of targets/steps (these steps from MRB)
 config_targets <- list(
@@ -41,7 +43,8 @@ config_targets <- list(
   # omit characteristic names or include others, to change top-level parameter names,
   # or to customize parameter groupings. 
   tar_target(param_groups_select,
-             c("chlorophyll", "secchi", "doc", "tss")),
+             c("chlorophyll", "secchi", "doc", "tss"#, "temperature"
+               )),
   
   
   # WQP inventory -----------------------------------------------------------
@@ -64,5 +67,6 @@ config_targets <- list(
 
 # Full targets list
 c(config_targets,
-  p1_targets_list, p2_targets_list, p3_targets_list, p4_targets_list)
+  p1_targets_list, p2_targets_list, p3_targets_list, p4_targets_list,
+  bookdown_targets_list)
 

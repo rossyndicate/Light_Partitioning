@@ -1,6 +1,16 @@
 
 harmonize_chla_strict <- function(raw_chla, p_codes, chla_analytical_method_matchup){
   
+  # Starting values for dataset
+  starting_data <- tibble(
+    step = "chla harmonization",
+    reason = "Starting dataset",
+    short_reason = "Start",
+    number_dropped = 0,
+    n_rows = nrow(raw_chla),
+    order = 0
+  )
+  
   # Minor data prep ---------------------------------------------------------
   
   # First step is to read in the data and do basic formatting and filtering
@@ -17,6 +27,7 @@ harmonize_chla_strict <- function(raw_chla, p_codes, chla_analytical_method_matc
   dropped_media <- tibble(
     step = "chla harmonization",
     reason = "Filtered for only water media",
+    short_reason = "Water media",
     number_dropped = nrow(raw_chla) - nrow(chla),
     n_rows = nrow(chla),
     order = 1
@@ -45,6 +56,7 @@ harmonize_chla_strict <- function(raw_chla, p_codes, chla_analytical_method_matc
   dropped_parameters <- tibble(
     step = "chla harmonization",
     reason = "Filtered for specific chlorophyll parameters",
+    short_reason = "Chla params",
     number_dropped = nrow(chla) - nrow(chla_param_filter),
     n_rows = nrow(chla_param_filter),
     order = 2
@@ -123,6 +135,7 @@ harmonize_chla_strict <- function(raw_chla, p_codes, chla_analytical_method_matc
   dropped_fails <- tibble(
     step = "chla harmonization",
     reason = "Dropped rows indicating fails, missing data, etc.",
+    short_reason = "Fails, etc.",
     number_dropped = nrow(chla_param_filter) - nrow(chla_fails_removed),
     n_rows = nrow(chla_fails_removed),
     order = 3)
@@ -155,13 +168,13 @@ harmonize_chla_strict <- function(raw_chla, p_codes, chla_analytical_method_matc
       half = as.numeric(mdl_vals) / 2)
   
   # Using the EPA standard for non-detects, select a random number between zero and HALF the MDL:
-  mdl_updates$epa_value <- with(mdl_updates, runif(nrow(mdl_updates), 0, half))
-  mdl_updates$epa_value[is.nan(mdl_updates$epa_value)] <- NA
+  mdl_updates$std_value <- with(mdl_updates, runif(nrow(mdl_updates), 0, half))
+  mdl_updates$std_value[is.nan(mdl_updates$std_value)] <- NA
   
   # Keep important data
   mdl_updates <- mdl_updates %>%
-    select(index, epa_value, mdl_vals, mdl_units) %>%
-    filter(!is.na(epa_value))
+    select(index, std_value, mdl_vals, mdl_units) %>%
+    filter(!is.na(std_value))
   
   
   print(
@@ -174,7 +187,7 @@ harmonize_chla_strict <- function(raw_chla, p_codes, chla_analytical_method_matc
   # Replace "harmonized_value" field with these new values
   chla_mdls_added <- chla_fails_removed %>%
     left_join(x = ., y = mdl_updates, by = "index") %>%
-    mutate(harmonized_value = ifelse(index %in% mdl_updates$index, epa_value, value_numeric),
+    mutate(harmonized_value = ifelse(index %in% mdl_updates$index, std_value, value_numeric),
            harmonized_units = ifelse(index %in% mdl_updates$index, mdl_units, units),
            harmonized_comments = ifelse(index %in% mdl_updates$index,
                                         "Approximated using the EPA's MDL method.", NA))
@@ -182,6 +195,7 @@ harmonize_chla_strict <- function(raw_chla, p_codes, chla_analytical_method_matc
   dropped_mdls <- tibble(
     step = "chla harmonization",
     reason = "Dropped rows while cleaning MDLs",
+    short_reason = "Clean MDLs",
     number_dropped = nrow(chla_fails_removed) - nrow(chla_mdls_added),
     n_rows = nrow(chla_mdls_added),
     order = 4
@@ -233,6 +247,7 @@ harmonize_chla_strict <- function(raw_chla, p_codes, chla_analytical_method_matc
   dropped_approximates <- tibble(
     step = "chla harmonization",
     reason = "Dropped rows while cleaning approximate values",
+    short_reason = "Clean approximates",
     number_dropped = nrow(chla_mdls_added) - nrow(chla_approx_added),
     n_rows = nrow(chla_approx_added),
     order = 5
@@ -277,6 +292,7 @@ harmonize_chla_strict <- function(raw_chla, p_codes, chla_analytical_method_matc
   dropped_greater_than <- tibble(
     step = "chla harmonization",
     reason = "Dropped rows while cleaning 'greater than' values",
+    short_reason = "Greater thans",
     number_dropped = nrow(chla_approx_added) - nrow(chla_harmonized_values),
     n_rows = nrow(chla_harmonized_values),
     order = 6
@@ -320,6 +336,7 @@ harmonize_chla_strict <- function(raw_chla, p_codes, chla_analytical_method_matc
   dropped_harmonization <- tibble(
     step = "chla harmonization",
     reason = "Dropped rows while harmonizing units",
+    short_reason = "Harmonize units",
     number_dropped = nrow(chla_harmonized_values) - nrow(converted_units_chla),
     n_rows = nrow(converted_units_chla),
     order = 7
@@ -367,6 +384,7 @@ harmonize_chla_strict <- function(raw_chla, p_codes, chla_analytical_method_matc
   dropped_depths <- tibble(
     step = "chla harmonization",
     reason = "Dropped rows while cleaning depths",
+    short_reason = "Clean depths",
     number_dropped = nrow(converted_units_chla) - nrow(converted_depth_units_chla),
     n_rows = nrow(converted_depth_units_chla),
     order = 8
@@ -407,6 +425,7 @@ harmonize_chla_strict <- function(raw_chla, p_codes, chla_analytical_method_matc
   dropped_methods <- tibble(
     step = "chla harmonization",
     reason = "Dropped rows while aggregating analytical methods",
+    short_reason = "Analytical methods",
     number_dropped = nrow(converted_depth_units_chla) - nrow(grouped_analytical_methods_chla),
     n_rows = nrow(grouped_analytical_methods_chla),
     order = 9
@@ -440,6 +459,7 @@ harmonize_chla_strict <- function(raw_chla, p_codes, chla_analytical_method_matc
   dropped_fractions <- tibble(
     step = "chla harmonization",
     reason = "Dropped rows while filtering fraction types",
+    short_reason = "Fraction types",
     number_dropped = nrow(grouped_analytical_methods_chla) - nrow(grouped_fractions_chla),
     n_rows = nrow(grouped_fractions_chla),
     order = 10
@@ -473,7 +493,7 @@ harmonize_chla_strict <- function(raw_chla, p_codes, chla_analytical_method_matc
   # Export ------------------------------------------------------------------
   
   # Record of all steps where rows were dropped, why, and how many
-  compiled_dropped <- bind_rows(dropped_approximates, dropped_depths, dropped_fails, 
+  compiled_dropped <- bind_rows(starting_data, dropped_approximates, dropped_depths, dropped_fails, 
                                 dropped_fractions, dropped_greater_than, dropped_harmonization, 
                                 dropped_mdls, dropped_media, dropped_methods, dropped_parameters)
   

@@ -1,0 +1,76 @@
+
+# Pre-harmonization decision process
+
+### 0. Initial dataset
+
+At the start of the preharmonization process the WQP dataset contains
+15.07 million rows.
+
+![](/Users/mbrousil/Documents/Light_Partitioning/chapters/02_preharmonization_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+
+<br>
+
+### 1. Remove duplicates
+
+The first filtering step is to remove any duplicated records present in
+the dataset. This results in dropping 3.02 million rows for a record
+count of 12.06 million.
+
+![](/Users/mbrousil/Documents/Light_Partitioning/chapters/02_preharmonization_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+
+<br>
+
+### 2. Missing results
+
+Next missing results are dropped from the dataset. 499.56 thousand rows
+are dropped, resulting in a final count of 11.56 million.
+
+![](/Users/mbrousil/Documents/Light_Partitioning/chapters/02_preharmonization_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+
+<br>
+
+### 2. Filter status
+
+We next filter the `ResultStatusIdentifier` column to include only the
+following statuses:
+
+- `"Accepted"`
+- `"Final"`
+- `"Historical"`
+- `"Validated"`
+- `"Preliminary"`
+- `NA`
+
+43.53 thousand rows are dropped from the dataset leaving it with 11.51
+million remaining.
+
+![](/Users/mbrousil/Documents/Light_Partitioning/chapters/02_preharmonization_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+
+<br>
+
+### 3. Filter media
+
+Next the `ActivityMediaSubdivisionName` is filtered to only include only
+the following media:
+
+- `"Surface Water"`
+- `"Water"`
+- `"Estuary"`
+- `NA`
+
+24.29 thousand rows are dropped and 11.49 million remain.
+
+![](/Users/mbrousil/Documents/Light_Partitioning/chapters/02_preharmonization_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+
+<br>
+
+#### 4. Location type
+
+The final step in pre-harmonization is filtering out any
+`ResolvedMonitoringLocationTypeName` that is not `"Estuary"`,
+`"Lake, Reservoir, Impoundment"`, or `"Stream"`.
+
+After dropping 124.4 thousand rows the pre-harmonization dataset is
+complete with 11.36 million.
+
+![](/Users/mbrousil/Documents/Light_Partitioning/chapters/02_preharmonization_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
